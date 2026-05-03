@@ -1,2 +1,2 @@
-# Zzc0595.github.io
-download
+# Snake Game
+https://Zzc0595.github.io/index.html
