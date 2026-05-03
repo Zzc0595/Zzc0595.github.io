@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🐍 贪吃蛇大作战 · 手机版</title>
+    <title>🐍 贪吃蛇大作战 · zzc制作</title>
     <style>
         :root {
             --bg: #1a1a2e;
@@ -32,7 +32,6 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             overflow-y: auto;
-            overflow-x: hidden;
             background-image:
                 radial-gradient(ellipse at 30% 20%, rgba(233, 68, 96, 0.08) 0%, transparent 60%),
                 radial-gradient(ellipse at 70% 80%, rgba(72, 219, 251, 0.06) 0%, transparent 60%);
@@ -42,7 +41,7 @@
             background: var(--panel);
             border-radius: 28px;
             padding: 24px 18px 18px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.04) inset;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.04) inset;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -51,6 +50,29 @@
             width: 100%;
             position: relative;
         }
+
+        /* zzc制作 - 顶部大标题 */
+        .zzc-header {
+            text-align: center;
+            color: var(--gold);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(245, 197, 24, 0.5);
+            animation: zzcGlow 2s ease-in-out infinite;
+            padding: 4px 0;
+            width: 100%;
+        }
+        @keyframes zzcGlow {
+            0%,
+            100% {
+                text-shadow: 0 0 20px rgba(245, 197, 24, 0.5);
+            }
+            50% {
+                text-shadow: 0 0 35px rgba(245, 197, 24, 0.9), 0 0 60px rgba(245, 197, 24, 0.4);
+            }
+        }
+
         .game-header {
             display: flex;
             align-items: center;
@@ -59,52 +81,92 @@
             gap: 8px;
             flex-wrap: wrap;
         }
-        .score-panel, .best-score-panel {
-            background: rgba(0,0,0,0.35);
+        .score-panel,
+        .best-score-panel {
+            background: rgba(0, 0, 0, 0.35);
             border-radius: 14px;
             padding: 8px 16px;
             display: flex;
             align-items: center;
             gap: 8px;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             flex: 1;
             min-width: 90px;
             justify-content: center;
         }
-        .score-icon { font-size: 24px; }
-        .score-label { color: #aaa; font-size: 11px; letter-spacing: 1.5px; font-weight: 600; }
-        .score-value { color: #fff; font-size: 26px; font-weight: 800; line-height: 1; min-width: 40px; text-align: center; transition: transform 0.15s; }
-        .score-pop { transform: scale(1.35); color: var(--gold); }
-        .best-score-icon { font-size: 20px; }
-        .best-score-value { color: var(--gold); font-size: 20px; font-weight: 700; }
+        .score-icon {
+            font-size: 24px;
+        }
+        .score-label {
+            color: #aaa;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+        .score-value {
+            color: #fff;
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1;
+            min-width: 40px;
+            text-align: center;
+            transition: transform 0.15s;
+        }
+        .score-pop {
+            transform: scale(1.35);
+            color: var(--gold);
+        }
+        .best-score-icon {
+            font-size: 20px;
+        }
+        .best-score-value {
+            color: var(--gold);
+            font-size: 20px;
+            font-weight: 700;
+        }
         .difficulty-badge {
             font-size: 12px;
             padding: 8px 16px;
             border-radius: 30px;
-            background: rgba(72,219,251,0.1);
+            background: rgba(72, 219, 251, 0.1);
             color: #48dbfb;
             letter-spacing: 1px;
             font-weight: 700;
             cursor: pointer;
-            border: 1px solid rgba(72,219,251,0.3);
+            border: 1px solid rgba(72, 219, 251, 0.3);
             white-space: nowrap;
         }
 
         canvas {
             border-radius: 18px;
             display: block;
-            box-shadow: 0 0 0 3px rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05), 0 8px 30px rgba(0, 0, 0, 0.5);
             background: #0d1117;
             width: 100%;
             height: auto;
             max-width: 440px;
             aspect-ratio: 1 / 1;
+            position: relative;
         }
+
+        /* zzc制作 - 画布上方水印 */
+        .canvas-watermark {
+            text-align: center;
+            color: rgba(245, 197, 24, 0.25);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-top: -10px;
+            margin-bottom: 4px;
+            pointer-events: none;
+        }
+
         .controls-row {
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
             justify-content: center;
+            align-items: center;
         }
         .btn {
             padding: 12px 24px;
@@ -116,21 +178,34 @@
             letter-spacing: 1px;
             background: var(--accent);
             color: #fff;
-            box-shadow: 0 6px 20px rgba(233,68,96,0.35);
+            box-shadow: 0 6px 20px rgba(233, 68, 96, 0.35);
             transition: all 0.2s;
             font-family: inherit;
             touch-action: manipulation;
         }
-        .btn:active { transform: scale(0.95); }
+        .btn:active {
+            transform: scale(0.95);
+        }
         .btn-outline {
             background: transparent;
-            border: 2px solid rgba(255,255,255,0.25);
+            border: 2px solid rgba(255, 255, 255, 0.25);
             color: #ccc;
             box-shadow: none;
         }
-        .btn-outline:active { background: rgba(255,255,255,0.08); }
+        .btn-outline:active {
+            background: rgba(255, 255, 255, 0.08);
+        }
 
-        /* 手机方向键区域 - 始终显示但PC端可隐藏，这里默认显示以确保手机能用 */
+        /* zzc制作 - 按钮旁标识 */
+        .zzc-btn-tag {
+            color: rgba(245, 197, 24, 0.5);
+            font-size: 10px;
+            letter-spacing: 2px;
+            font-weight: 600;
+            text-align: center;
+            pointer-events: none;
+        }
+
         .mobile-dpad {
             display: grid;
             grid-template-areas:
@@ -147,8 +222,8 @@
             width: var(--dpad-size);
             height: var(--dpad-size);
             border-radius: 50%;
-            background: rgba(255,255,255,0.08);
-            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             color: #fff;
             font-size: 28px;
             cursor: pointer;
@@ -158,21 +233,28 @@
             transition: all 0.1s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             user-select: none;
         }
         .dpad-btn:active {
-            background: rgba(255,255,255,0.25);
+            background: rgba(255, 255, 255, 0.25);
             border-color: #fff;
             transform: scale(0.88);
-            box-shadow: 0 0 22px rgba(255,255,255,0.25);
+            box-shadow: 0 0 22px rgba(255, 255, 255, 0.25);
         }
-        .dpad-up { grid-area: up; }
-        .dpad-down { grid-area: down; }
-        .dpad-left { grid-area: left; }
-        .dpad-right { grid-area: right; }
+        .dpad-up {
+            grid-area: up;
+        }
+        .dpad-down {
+            grid-area: down;
+        }
+        .dpad-left {
+            grid-area: left;
+        }
+        .dpad-right {
+            grid-area: right;
+        }
 
-        /* 滑动提示 */
         .swipe-hint {
             color: #888;
             font-size: 12px;
@@ -181,19 +263,32 @@
             letter-spacing: 1px;
         }
 
+        /* zzc制作 - 底部版权 */
+        .zzc-footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 10px;
+            letter-spacing: 2px;
+            font-weight: 500;
+            padding: 6px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+            margin-top: 2px;
+        }
+
         .game-over-overlay {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0);
-            background: rgba(0,0,0,0.92);
+            background: rgba(0, 0, 0, 0.92);
             border-radius: 24px;
             padding: 28px 32px;
             text-align: center;
             z-index: 10;
             opacity: 0;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 1px solid rgba(255,255,255,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(12px);
             pointer-events: none;
             width: fit-content;
@@ -223,10 +318,21 @@
             margin-bottom: 16px;
         }
 
+        /* zzc制作 - 弹窗内标识 */
+        .zzc-overlay-tag {
+            color: rgba(245, 197, 24, 0.5);
+            font-size: 10px;
+            letter-spacing: 2px;
+            margin-top: 6px;
+        }
+
         @media (min-width: 769px) {
-            /* 桌面端可以隐藏方向键，因为用键盘更舒服 */
-            .mobile-dpad { display: none; }
-            .swipe-hint { display: none; }
+            .mobile-dpad {
+                display: none;
+            }
+            .swipe-hint {
+                display: none;
+            }
         }
 
         @media (max-width: 400px) {
@@ -234,13 +340,22 @@
                 --dpad-size: 54px;
                 --dpad-gap: 6px;
             }
-            .game-wrapper { padding: 16px 10px 12px; }
-            .btn { padding: 10px 18px; font-size: 14px; }
+            .game-wrapper {
+                padding: 16px 10px 12px;
+            }
+            .btn {
+                padding: 10px 18px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="game-wrapper" id="gameWrapper">
+
+        <!-- zzc制作 - 顶部大标题 -->
+        <div class="zzc-header">⚡ zzc 制作 ⚡</div>
+
         <!-- 头部信息 -->
         <div class="game-header">
             <div class="score-panel">
@@ -263,6 +378,9 @@
         <!-- 画布 -->
         <canvas id="gameCanvas"></canvas>
 
+        <!-- zzc制作 - 画布下方水印 -->
+        <div class="canvas-watermark">🎮 zzc 制作 🎮</div>
+
         <!-- 滑动操作提示 -->
         <div class="swipe-hint">👆 在蛇身上滑动也能控制方向</div>
 
@@ -272,7 +390,10 @@
             <button class="btn btn-outline" id="btnPause">⏸ 暂停</button>
         </div>
 
-        <!-- 手机虚拟方向键（桌面端自动隐藏） -->
+        <!-- zzc制作 - 按钮旁标识 -->
+        <div class="zzc-btn-tag">—— zzc 制作 ——</div>
+
+        <!-- 手机虚拟方向键 -->
         <div class="mobile-dpad" id="mobileDpad">
             <button class="dpad-btn dpad-up" data-dir="up">▲</button>
             <button class="dpad-btn dpad-left" data-dir="left">◀</button>
@@ -280,12 +401,17 @@
             <button class="dpad-btn dpad-down" data-dir="down">▼</button>
         </div>
 
+        <!-- zzc制作 - 底部版权 -->
+        <div class="zzc-footer">© 2024 zzc 制作 · 贪吃蛇大作战</div>
+
         <!-- 游戏结束弹窗 -->
         <div class="game-over-overlay" id="gameOverOverlay">
             <h2>💥 游戏结束</h2>
             <div class="final-score" id="finalScore">0</div>
             <div class="sub-text">你的得分</div>
             <button class="btn" id="btnRestart">🔄 再来一局</button>
+            <!-- zzc制作 - 弹窗内标识 -->
+            <div class="zzc-overlay-tag">⚡ zzc 制作 ⚡</div>
         </div>
     </div>
 
@@ -347,6 +473,7 @@
                 scoreDisplay.classList.add('score-pop');
                 setTimeout(() => scoreDisplay.classList.remove('score-pop'), 180);
             }
+
             function spawnParticles(x, y, color, count = 8) {
                 for (let i = 0; i < count; i++) {
                     const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
@@ -363,6 +490,7 @@
                     });
                 }
             }
+
             function updateParticles() {
                 for (let i = particles.length - 1; i >= 0; i--) {
                     const p = particles[i];
@@ -372,6 +500,7 @@
                     if (p.life <= 0) particles.splice(i, 1);
                 }
             }
+
             function drawParticles() {
                 for (const p of particles) {
                     ctx.save();
@@ -406,6 +535,7 @@
                     food = { x: pos.x, y: pos.y, type: Math.random() < 0.1 ? 'bonus' : 'normal' };
                 }
             }
+
             function spawnSpecialFood() {
                 if (specialFood) return;
                 const pos = getRandomFoodPosition();
@@ -454,6 +584,7 @@
                 stopGameLoop();
                 gameLoopId = setTimeout(gameTick, currentDifficulty.speed);
             }
+
             function stopGameLoop() {
                 if (gameLoopId) {
                     clearTimeout(gameLoopId);
@@ -473,7 +604,6 @@
                 const head = snake[0];
                 const newHead = { x: head.x + direction.x, y: head.y + direction.y };
 
-                // 撞墙
                 if (newHead.x < 0 || newHead.x >= COLS || newHead.y < 0 || newHead.y >= ROWS) {
                     endGame();
                     return;
@@ -490,7 +620,6 @@
                 snake.unshift(newHead);
 
                 let ate = false;
-                // 吃普通食物
                 if (newHead.x === food.x && newHead.y === food.y) {
                     ate = true;
                     const basePoints = food.type === 'bonus' ? 30 : 10;
@@ -507,7 +636,6 @@
                         spawnSpecialFood();
                     }
                 } else if (specialFood && newHead.x === specialFood.x && newHead.y === specialFood.y) {
-                    // 吃特殊食物
                     ate = true;
                     const points = Math.round(50 * currentDifficulty.multiplier);
                     score += points;
@@ -580,7 +708,8 @@
             // ========== 绘制 ==========
             function draw() {
                 ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
-                let shakeX = 0, shakeY = 0;
+                let shakeX = 0,
+                    shakeY = 0;
                 if (gridShake > 0.5) {
                     shakeX = (Math.random() - 0.5) * gridShake * 2;
                     shakeY = (Math.random() - 0.5) * gridShake * 2;
@@ -588,9 +717,23 @@
                 ctx.save();
                 ctx.translate(shakeX, shakeY);
 
-                // 背景网格
+                // 背景
                 ctx.fillStyle = '#0d1117';
                 ctx.fillRect(-2, -2, CANVAS_W + 4, CANVAS_H + 4);
+
+                // zzc制作 - 画布内背景水印（大号半透明）
+                ctx.save();
+                ctx.globalAlpha = 0.06;
+                ctx.fillStyle = '#f5c518';
+                ctx.font = 'bold 28px "Segoe UI","PingFang SC"';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('zzc 制作', CANVAS_W / 2, CANVAS_H / 2);
+                ctx.fillText('zzc 制作', CANVAS_W / 2, CANVAS_H / 2 - 60);
+                ctx.fillText('zzc 制作', CANVAS_W / 2, CANVAS_H / 2 + 60);
+                ctx.restore();
+
+                // 网格线
                 ctx.strokeStyle = 'rgba(255,255,255,0.03)';
                 ctx.lineWidth = 0.5;
                 for (let x = 0; x <= COLS; x++) {
@@ -612,61 +755,63 @@
                     const sx = specialFood.x * GRID_SIZE;
                     const sy = specialFood.y * GRID_SIZE;
                     const gradient = ctx.createRadialGradient(
-                        sx + GRID_SIZE/2, sy + GRID_SIZE/2, GRID_SIZE*0.3,
-                        sx + GRID_SIZE/2, sy + GRID_SIZE/2, GRID_SIZE*1.4
+                        sx + GRID_SIZE / 2, sy + GRID_SIZE / 2, GRID_SIZE * 0.3,
+                        sx + GRID_SIZE / 2, sy + GRID_SIZE / 2, GRID_SIZE * 1.4
                     );
                     gradient.addColorStop(0, 'rgba(72,219,251,0.9)');
                     gradient.addColorStop(0.5, 'rgba(72,219,251,0.3)');
                     gradient.addColorStop(1, 'rgba(72,219,251,0)');
                     ctx.fillStyle = gradient;
-                    ctx.fillRect(sx - GRID_SIZE, sy - GRID_SIZE, GRID_SIZE*3, GRID_SIZE*3);
+                    ctx.fillRect(sx - GRID_SIZE, sy - GRID_SIZE, GRID_SIZE * 3, GRID_SIZE * 3);
                     ctx.fillStyle = `rgba(72,219,251,${alpha})`;
                     ctx.save();
-                    ctx.translate(sx + GRID_SIZE/2, sy + GRID_SIZE/2);
-                    ctx.rotate(Math.PI/4);
-                    const d = GRID_SIZE*0.38;
-                    ctx.fillRect(-d, -d, d*2, d*2);
+                    ctx.translate(sx + GRID_SIZE / 2, sy + GRID_SIZE / 2);
+                    ctx.rotate(Math.PI / 4);
+                    const d = GRID_SIZE * 0.38;
+                    ctx.fillRect(-d, -d, d * 2, d * 2);
                     ctx.restore();
                     ctx.fillStyle = '#fff';
                     ctx.font = 'bold 14px "Segoe UI","PingFang SC"';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText('💎', sx + GRID_SIZE/2, sy + GRID_SIZE/2);
+                    ctx.fillText('💎', sx + GRID_SIZE / 2, sy + GRID_SIZE / 2);
                 }
 
                 // 普通食物
                 const fx = food.x * GRID_SIZE;
                 const fy = food.y * GRID_SIZE;
                 if (food.type === 'bonus') {
-                    const glow = ctx.createRadialGradient(fx+GRID_SIZE/2, fy+GRID_SIZE/2, GRID_SIZE*0.2, fx+GRID_SIZE/2, fy+GRID_SIZE/2, GRID_SIZE*1.2);
+                    const glow = ctx.createRadialGradient(fx + GRID_SIZE / 2, fy + GRID_SIZE / 2, GRID_SIZE * 0.2,
+                        fx + GRID_SIZE / 2, fy + GRID_SIZE / 2, GRID_SIZE * 1.2);
                     glow.addColorStop(0, 'rgba(245,197,24,0.8)');
                     glow.addColorStop(1, 'rgba(245,197,24,0)');
                     ctx.fillStyle = glow;
-                    ctx.fillRect(fx-GRID_SIZE*0.6, fy-GRID_SIZE*0.6, GRID_SIZE*2.2, GRID_SIZE*2.2);
+                    ctx.fillRect(fx - GRID_SIZE * 0.6, fy - GRID_SIZE * 0.6, GRID_SIZE * 2.2, GRID_SIZE * 2.2);
                     ctx.fillStyle = '#f5c518';
                     ctx.beginPath();
-                    ctx.arc(fx+GRID_SIZE/2, fy+GRID_SIZE/2, GRID_SIZE*0.4, 0, Math.PI*2);
+                    ctx.arc(fx + GRID_SIZE / 2, fy + GRID_SIZE / 2, GRID_SIZE * 0.4, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.fillStyle = '#fff';
                     ctx.font = 'bold 14px "Segoe UI","PingFang SC"';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText('⭐', fx+GRID_SIZE/2, fy+GRID_SIZE/2);
+                    ctx.fillText('⭐', fx + GRID_SIZE / 2, fy + GRID_SIZE / 2);
                 } else {
-                    const redGlow = ctx.createRadialGradient(fx+GRID_SIZE/2, fy+GRID_SIZE/2, GRID_SIZE*0.1, fx+GRID_SIZE/2, fy+GRID_SIZE/2, GRID_SIZE*1.1);
+                    const redGlow = ctx.createRadialGradient(fx + GRID_SIZE / 2, fy + GRID_SIZE / 2, GRID_SIZE * 0.1,
+                        fx + GRID_SIZE / 2, fy + GRID_SIZE / 2, GRID_SIZE * 1.1);
                     redGlow.addColorStop(0, 'rgba(255,90,117,0.7)');
                     redGlow.addColorStop(1, 'rgba(255,90,117,0)');
                     ctx.fillStyle = redGlow;
-                    ctx.fillRect(fx-GRID_SIZE*0.5, fy-GRID_SIZE*0.5, GRID_SIZE*2, GRID_SIZE*2);
+                    ctx.fillRect(fx - GRID_SIZE * 0.5, fy - GRID_SIZE * 0.5, GRID_SIZE * 2, GRID_SIZE * 2);
                     ctx.fillStyle = '#ff5a75';
                     ctx.beginPath();
-                    ctx.arc(fx+GRID_SIZE/2, fy+GRID_SIZE/2, GRID_SIZE*0.38, 0, Math.PI*2);
+                    ctx.arc(fx + GRID_SIZE / 2, fy + GRID_SIZE / 2, GRID_SIZE * 0.38, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.fillStyle = '#fff';
                     ctx.font = 'bold 14px "Segoe UI","PingFang SC"';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText('🍎', fx+GRID_SIZE/2, fy+GRID_SIZE/2);
+                    ctx.fillText('🍎', fx + GRID_SIZE / 2, fy + GRID_SIZE / 2);
                 }
 
                 // 蛇身
@@ -691,34 +836,42 @@
                         ctx.shadowBlur = 0;
                     }
                     ctx.beginPath();
-                    ctx.roundRect(sx + padding, sy + padding, size, size, GRID_SIZE*0.3);
+                    ctx.roundRect(sx + padding, sy + padding, size, size, GRID_SIZE * 0.3);
                     ctx.fill();
                     ctx.shadowBlur = 0;
 
                     if (i === 0) {
-                        const eyeSize = GRID_SIZE*0.15;
-                        const cx = sx + GRID_SIZE/2;
-                        const cy = sy + GRID_SIZE/2;
+                        const eyeSize = GRID_SIZE * 0.15;
+                        const cx = sx + GRID_SIZE / 2;
+                        const cy = sy + GRID_SIZE / 2;
                         let e1x, e1y, e2x, e2y;
                         if (direction.x !== 0) {
-                            const offset = direction.x > 0 ? GRID_SIZE*0.55 : GRID_SIZE*0.15;
-                            e1x = cx + offset - GRID_SIZE/2;
-                            e1y = cy - GRID_SIZE*0.2;
-                            e2x = cx + offset - GRID_SIZE/2;
-                            e2y = cy + GRID_SIZE*0.2;
+                            const offset = direction.x > 0 ? GRID_SIZE * 0.55 : GRID_SIZE * 0.15;
+                            e1x = cx + offset - GRID_SIZE / 2;
+                            e1y = cy - GRID_SIZE * 0.2;
+                            e2x = cx + offset - GRID_SIZE / 2;
+                            e2y = cy + GRID_SIZE * 0.2;
                         } else {
-                            const offset = direction.y > 0 ? GRID_SIZE*0.55 : GRID_SIZE*0.15;
-                            e1x = cx - GRID_SIZE*0.2;
-                            e1y = cy + offset - GRID_SIZE/2;
-                            e2x = cx + GRID_SIZE*0.2;
-                            e2y = cy + offset - GRID_SIZE/2;
+                            const offset = direction.y > 0 ? GRID_SIZE * 0.55 : GRID_SIZE * 0.15;
+                            e1x = cx - GRID_SIZE * 0.2;
+                            e1y = cy + offset - GRID_SIZE / 2;
+                            e2x = cx + GRID_SIZE * 0.2;
+                            e2y = cy + offset - GRID_SIZE / 2;
                         }
                         ctx.fillStyle = '#fff';
-                        ctx.beginPath(); ctx.arc(e1x, e1y, eyeSize, 0, Math.PI*2); ctx.fill();
-                        ctx.beginPath(); ctx.arc(e2x, e2y, eyeSize, 0, Math.PI*2); ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(e1x, e1y, eyeSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(e2x, e2y, eyeSize, 0, Math.PI * 2);
+                        ctx.fill();
                         ctx.fillStyle = '#111';
-                        ctx.beginPath(); ctx.arc(e1x, e1y, eyeSize*0.5, 0, Math.PI*2); ctx.fill();
-                        ctx.beginPath(); ctx.arc(e2x, e2y, eyeSize*0.5, 0, Math.PI*2); ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(e1x, e1y, eyeSize * 0.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(e2x, e2y, eyeSize * 0.5, 0, Math.PI * 2);
+                        ctx.fill();
                     }
                 }
 
@@ -730,7 +883,7 @@
                     ctx.fillStyle = `rgba(255,255,255,${alpha})`;
                     ctx.font = 'bold 16px "Segoe UI","PingFang SC"';
                     ctx.textAlign = 'center';
-                    ctx.fillText(`🔥 ${comboCount}连击!`, CANVAS_W/2, CANVAS_H-10);
+                    ctx.fillText(`🔥 ${comboCount}连击!`, CANVAS_W / 2, CANVAS_H - 10);
                 }
             }
 
@@ -742,22 +895,20 @@
                 nextDirection = { x: dx, y: dy };
             }
 
-            // 键盘
             document.addEventListener('keydown', (e) => {
                 if (isGameOver) return;
                 const key = e.key.toLowerCase();
-                if (['arrowup','w'].includes(key)) { e.preventDefault(); changeDirection(0, -1); }
-                else if (['arrowdown','s'].includes(key)) { e.preventDefault(); changeDirection(0, 1); }
-                else if (['arrowleft','a'].includes(key)) { e.preventDefault(); changeDirection(-1, 0); }
-                else if (['arrowright','d'].includes(key)) { e.preventDefault(); changeDirection(1, 0); }
-                else if (key === ' ' || key === 'p') {
+                if (['arrowup', 'w'].includes(key)) { e.preventDefault();
+                    changeDirection(0, -1); } else if (['arrowdown', 's'].includes(key)) { e.preventDefault();
+                    changeDirection(0, 1); } else if (['arrowleft', 'a'].includes(key)) { e.preventDefault();
+                    changeDirection(-1, 0); } else if (['arrowright', 'd'].includes(key)) { e.preventDefault();
+                    changeDirection(1, 0); } else if (key === ' ' || key === 'p') {
                     e.preventDefault();
                     if (isRunning && !isGameOver) togglePause();
                     else if (!isRunning || isGameOver) resetAndStart();
                 }
             });
 
-            // 手机方向键点击
             mobileDpad.querySelectorAll('.dpad-btn').forEach(btn => {
                 btn.addEventListener('pointerdown', (e) => {
                     e.preventDefault();
@@ -769,8 +920,8 @@
                 });
             });
 
-            // 滑动操控
-            let touchStartX = 0, touchStartY = 0;
+            let touchStartX = 0,
+                touchStartY = 0;
             canvas.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1) {
                     touchStartX = e.touches[0].clientX;
@@ -792,7 +943,6 @@
                 }
             });
 
-            // 按钮
             btnStart.addEventListener('click', resetAndStart);
             btnPause.addEventListener('click', () => { if (isRunning && !isGameOver) togglePause(); });
             btnRestart.addEventListener('click', resetAndStart);
@@ -810,6 +960,7 @@
             function updateBestDisplay() {
                 bestScoreDisplay.textContent = bestScore;
             }
+
             function loadBestScore() {
                 try {
                     const saved = localStorage.getItem('snakeBestScore');
@@ -818,14 +969,11 @@
                 updateBestDisplay();
             }
 
-            // 初始
             loadBestScore();
             initGame();
             draw();
 
-            console.log('🐍 贪吃蛇大作战·手机版已启动！');
-            console.log('   📱 屏幕底部有大按钮，也可直接在蛇身上滑动');
-            console.log('   ⌨ 桌面端依然支持键盘方向键');
+            console.log('🐍 贪吃蛇大作战 · zzc制作 · 手机版已启动！');
         })();
     </script>
 </body>
