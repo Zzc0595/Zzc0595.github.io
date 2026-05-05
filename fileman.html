@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件管理器 - zzc0595</title>
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --primary: #4a6cf7;
+            --primary-hover: #3651d5;
+            --primary-light: #eef1ff;
+            --text: #1a1d2e;
+            --text-secondary: #5a5f7a;
+            --border: #e2e8f0;
+            --border-light: #f0f2f5;
+            --danger: #e74c3c;
+            --danger-hover: #c0392b;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --radius-xs: 6px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f1119;
+                --card-bg: #1a1d2b;
+                --primary: #6c8cff;
+                --primary-hover: #8aa5ff;
+                --primary-light: #1a2040;
+                --text: #e8eaf0;
+                --text-secondary: #a0a5bc;
+                --border: #2a2d3a;
+                --border-light: #222532;
+                --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+                --shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
+                --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-sm);
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .header-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            border-radius: var(--radius-xs);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all var(--transition);
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            min-height: 42px;
+            justify-content: center;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 14px rgba(74, 108, 247, 0.3);
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        .btn-outline:hover {
+            background: var(--primary-light);
+        }
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+            padding: 8px 12px;
+            min-height: 36px;
+            font-weight: 500;
+        }
+        .btn-ghost:hover {
+            background: var(--border-light);
+            color: var(--text);
+            border-color: var(--border);
+        }
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid transparent;
+            padding: 6px 10px;
+            min-height: 32px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .btn-danger:hover {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        @media (prefers-color-scheme: dark) {
+            .btn-danger:hover {
+                background: #2a1518;
+                border-color: #4a2025;
+            }
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            min-height: 32px;
+        }
+        .btn-xs {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            min-height: 26px;
+            border-radius: 4px;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 5px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            gap: 2px;
+        }
+        .tab {
+            flex: 1;
+            padding: 11px 16px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all var(--transition);
+            color: var(--text-secondary);
+            border: none;
+            background: transparent;
+            white-space: nowrap;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .tab.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(74, 108, 247, 0.25);
+        }
+        .tab:hover:not(.active) {
+            background: var(--border-light);
+            color: var(--text);
+        }
+
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .card-header-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-body {
+            padding: 8px 0;
+        }
+        .card-body-inner {
+            padding: 0 16px;
+        }
+
+        /* Search */
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 160px;
+            max-width: 300px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 9px 14px 9px 36px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: var(--bg);
+            font-size: 0.85rem;
+            color: var(--text);
+            transition: all var(--transition);
+            outline: none;
+        }
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            font-size: 0.9rem;
+        }
+
+        /* File list */
+        .file-list {
+            list-style: none;
+            max-height: 55vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .file-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        .file-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .file-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            cursor: pointer;
+            transition: all var(--transition);
+            border-bottom: 1px solid var(--border-light);
+            position: relative;
+            min-height: 52px;
+        }
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        .file-item:hover {
+            background: var(--border-light);
+        }
+        .file-item:active {
+            background: var(--primary-light);
+        }
+        .file-item.selected {
+            background: var(--primary-light);
+            border-left: 3px solid var(--primary);
+        }
+        .file-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-xs);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            font-weight: 700;
+            background: var(--bg);
+            color: var(--text-secondary);
+        }
+        .file-icon.folder {
+            color: #f0a040;
+            background: #fff8ed;
+        }
+        .file-icon.image {
+            color: #4ecdc4;
+            background: #edfaf9;
+        }
+        .file-icon.code {
+            color: #6c5ce7;
+            background: #f3f0ff;
+        }
+        .file-icon.doc {
+            color: #4a6cf7;
+            background: #eef1ff;
+        }
+        .file-icon.archive {
+            color: #e74c3c;
+            background: #fef2f2;
+        }
+        @media (prefers-color-scheme: dark) {
+            .file-icon.folder {
+                background: #2a2015;
+            }
+            .file-icon.image {
+                background: #1a2524;
+            }
+            .file-icon.code {
+                background: #1f1c30;
+            }
+            .file-icon.doc {
+                background: #1a2040;
+            }
+            .file-icon.archive {
+                background: #2a1518;
+            }
+        }
+        .file-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .file-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text);
+        }
+        .file-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        /* Upload zone */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            background: var(--card-bg);
+            position: relative;
+        }
+        .upload-zone:hover,
+        .upload-zone.drag-over {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .upload-zone-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .upload-zone-text {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .upload-zone-hint {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+            max-width: 380px;
+            width: calc(100% - 40px);
+        }
+        .toast {
+            padding: 12px 18px;
+            border-radius: var(--radius-xs);
+            font-weight: 600;
+            font-size: 0.85rem;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.3s ease;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            word-break: break-word;
+        }
+        .toast.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .toast.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .toast.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        @media (prefers-color-scheme: dark) {
+            .toast.success {
+                background: #1a3a28;
+                color: #8fd9a8;
+                border-color: #2a5a38;
+            }
+            .toast.error {
+                background: #3a1a1f;
+                color: #e8a0a8;
+                border-color: #5a2a32;
+            }
+            .toast.info {
+                background: #1a2f3a;
+                color: #8fc8d9;
+                border-color: #2a4a5a;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(60px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9990;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+        }
+        .modal-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+        .modal-body {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .badge-gh {
+            background: #f0f0f0;
+            color: #555;
+        }
+        @media (prefers-color-scheme: dark) {
+            .badge-gh {
+                background: #2a2d3a;
+                color: #bbb;
+            }
+        }
+        .badge-local {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+        .empty-state-text {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+        .empty-state-hint {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            padding: 4px 0;
+        }
+        .breadcrumb span {
+            cursor: pointer;
+            color: var(--primary);
+            font-weight: 500;
+            transition: color var(--transition);
+        }
+        .breadcrumb span:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+        .breadcrumb .sep {
+            color: var(--text-secondary);
+            cursor: default;
+            pointer-events: none;
+        }
+        .breadcrumb .current {
+            color: var(--text);
+            font-weight: 600;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Progress bar */
+        .progress-bar-wrap {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        /* Checkbox */
+        .checkbox-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .checkbox-wrap input {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            body {
+                padding: 8px;
+            }
+            .app-container {
+                gap: 10px;
+            }
+            .header {
+                padding: 14px 16px;
+                gap: 8px;
+            }
+            .header-title {
+                font-size: 1.1rem;
+            }
+            .header-icon {
+                width: 34px;
+                height: 34px;
+                font-size: 18px;
+            }
+            .btn {
+                padding: 8px 14px;
+                font-size: 0.82rem;
+                min-height: 36px;
+                gap: 4px;
+            }
+            .tab {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+                min-height: 36px;
+            }
+            .file-item {
+                padding: 10px 12px;
+                gap: 8px;
+            }
+            .file-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 1rem;
+            }
+            .file-name {
+                font-size: 0.82rem;
+            }
+            .file-meta {
+                font-size: 0.7rem;
+            }
+            .card-header {
+                padding: 10px 14px;
+            }
+            .upload-zone {
+                padding: 20px 14px;
+            }
+            .upload-zone-icon {
+                font-size: 2rem;
+            }
+            .file-list {
+                max-height: 45vh;
+            }
+            .search-wrap {
+                max-width: 100%;
+                flex: 1 1 100%;
+            }
+            .modal {
+                padding: 16px;
+                margin: 8px;
+            }
+        }
+        @media (max-width: 380px) {
+            .file-actions .btn {
+                padding: 4px 6px;
+                font-size: 0.68rem;
+                min-height: 24px;
+            }
+            .file-item {
+                gap: 6px;
+                padding: 8px 10px;
+            }
+            .file-icon {
+                width: 28px;
+                height: 28px;
+                font-size: 0.85rem;
+            }
+            .header-actions {
+                gap: 4px;
+            }
+            .btn {
+                padding: 7px 10px;
+                font-size: 0.75rem;
+                min-height: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-brand">
+                <div class="header-icon">📁</div>
+                <div>
+                    <div class="header-title">文件管理器</div>
+                    <div class="header-subtitle">zzc0595.github.io</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline btn-sm" id="btnSettings" title="设置">
+                    ⚙️ 设置
+                </button>
+                <button class="btn btn-primary btn-sm" id="btnUploadMain">
+                    ⬆️ 上传文件
+                </button>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="tabs" id="tabsContainer">
+            <button class="tab active" data-tab="github">
+                🌐 仓库文件
+            </button>
+            <button class="tab" data-tab="local">
+                💾 本地文件
+            </button>
+        </div>
+
+        <!-- Main Card -->
+        <div class="card" id="mainCard">
+            <div class="card-header" id="cardHeader">
+                <div class="card-header-title" id="cardTitle">
+                    📂 仓库文件
+                </div>
+                <div class="search-wrap" id="searchWrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="searchInput" placeholder="搜索文件...">
+                </div>
+            </div>
+            <!-- Breadcrumb -->
+            <div class="card-body-inner" id="breadcrumbContainer" style="padding-top:8px;"></div>
+            <!-- File list -->
+            <div class="card-body">
+                <div id="fileListContainer">
+                    <div class="empty-state">
+                        <span class="empty-state-icon">📭</span>
+                        <div class="empty-state-text">暂无文件</div>
+                        <div class="empty-state-hint">上传文件或加载仓库内容</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Upload zone (local tab) -->
+            <div id="uploadZoneContainer" style="padding:0 16px 16px;display:none;">
+                <div class="upload-zone" id="uploadZone">
+                    <span class="upload-zone-icon">📤</span>
+                    <div class="upload-zone-text">点击或拖拽文件到此处上传</div>
+                    <div class="upload-zone-hint">文件将存储在浏览器本地数据库中</div>
+                    <div class="progress-bar-wrap" id="progressWrap" style="display:none;">
+                        <div class="progress-bar-fill" id="progressFill" style="width:0%;"></div>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" multiple style="display:none;">
+            </div>
+        </div>
+
+        <!-- Info footer -->
+        <div style="text-align:center;font-size:0.72rem;color:var(--text-secondary);opacity:0.7;padding:4px;">
+            数据存储在浏览器本地 · GitHub 仓库文件通过 API 获取
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal" style="display:none;">
+        <div class="modal">
+            <div class="modal-title">⚙️ 设置</div>
+            <div class="modal-body">
+                <p style="margin-bottom:10px;">
+                    <strong>GitHub Personal Access Token</strong>（可选）
+                </p>
+                <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px;">
+                    配置 Token 后可直接上传文件到 GitHub 仓库。需要 <code>repo</code> 权限。
+                    Token 仅存储在浏览器本地。
+                </p>
+                <input type="password" id="tokenInput"
+                style="width:100%;padding:10px 12px;border-radius:var(--radius-xs);border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:0.85rem;font-family:var(--font-mono);outline:none;"
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
+                    <span id="tokenStatus" style="font-size:0.8rem;color:var(--text-secondary);">未配置</span>
+                    <button class="btn btn-xs btn-ghost" id="btnClearToken">清除</button>
+                </div>
+                <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+                <p style="font-size:0.8rem;color:var(--text-secondary);">
+                    💡 <strong>提示：</strong>不配置 Token 也可正常使用。上传的文件将存储在浏览器 IndexedDB 中，
+                    仅限当前浏览器访问。配置 Token 后，文件将直接推送到 GitHub 仓库。
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" id="btnSettingsCancel">取消</button>
+                <button class="btn btn-primary" id="btnSettingsSave">💾 保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal-overlay" id="deleteModal" style="display:none;">
+        <div class="modal">
+            <div class="modal-title">⚠️ 确认删除</div>
+            <div class="modal-body" id="deleteModalBody">确定要删除该文件吗？此操作无法撤销。</div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" id="btnDeleteCancel">取消</button>
+                <button class="btn btn-danger" id="btnDeleteConfirm" style="background:var(--danger);color:#fff;">🗑️ 删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== DOM Elements ====================
+            const $ = (s) => document.querySelector(s);
+            const $$ = (s) => document.querySelectorAll(s);
+
+            const fileListContainer = $('#fileListContainer');
+            const searchInput = $('#searchInput');
+            const searchWrap = $('#searchWrap');
+            const uploadZoneContainer = $('#uploadZoneContainer');
+            const uploadZone = $('#uploadZone');
+            const fileInput = $('#fileInput');
+            const progressWrap = $('#progressWrap');
+            const progressFill = $('#progressFill');
+            const breadcrumbContainer = $('#breadcrumbContainer');
+            const cardTitle = $('#cardTitle');
+            const toastContainer = $('#toastContainer');
+            const settingsModal = $('#settingsModal');
+            const deleteModal = $('#deleteModal');
+            const deleteModalBody = $('#deleteModalBody');
+            const tokenInput = $('#tokenInput');
+            const tokenStatus = $('#tokenStatus');
+            const tabsContainer = $('#tabsContainer');
+
+            // ==================== State ====================
+            let currentTab = 'github'; // 'github' | 'local'
+            let githubPath = ''; // current subdirectory path in GitHub repo
+            let githubFiles = []; // files from GitHub API
+            let localFiles = []; // files from IndexedDB
+            let searchQuery = '';
+            let pendingDeleteKey = null;
+            let pendingDeleteSource = null; // 'local' | 'github'
+            let selectedLocalKeys = new Set(); // for batch operations
+            let isUploading = false;
+
+            const REPO_API_BASE = 'https://api.github.com/repos/zzc0595/zzc0595.github.io/contents/';
+            const DB_NAME = 'FileStorageDB';
+            const DB_VERSION = 2;
+            const STORE_NAME = 'files';
+
+            // ==================== IndexedDB ====================
+            function openDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(DB_NAME, DB_VERSION);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains(STORE_NAME)) {
+                            const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                            store.createIndex('name', 'name', { unique: false });
+                            store.createIndex('timestamp', 'timestamp', { unique: false });
+                        }
+                    };
+                    request.onsuccess = (e) => resolve(e.target.result);
+                    request.onerror = (e) => reject(e.target.error);
+                });
+            }
+
+            async function dbAddFile(fileObj) {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.put(fileObj);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                    tx.oncomplete = () => db.close();
+                });
+            }
+
+            async function dbGetAllFiles() {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result || []);
+                    request.onerror = () => reject(request.error);
+                    tx.oncomplete = () => db.close();
+                });
+            }
+
+            async function dbDeleteFile(id) {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.delete(id);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                    tx.oncomplete = () => db.close();
+                });
+            }
+
+            async function dbDeleteMultiple(ids) {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    let count = 0;
+                    const total = ids.length;
+                    if (total === 0) { resolve(); return; }
+                    ids.forEach(id => {
+                        const req = store.delete(id);
+                        req.onsuccess = () => {
+                            count++;
+                            if (count >= total) resolve();
+                        };
+                        req.onerror = () => reject(req.error);
+                    });
+                    tx.oncomplete = () => db.close();
+                });
+            }
+
+            async function dbClearAll() {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.clear();
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                    tx.oncomplete = () => db.close();
+                });
+            }
+
+            async function dbGetStorageEstimate() {
+                if ('storage' in navigator && 'estimate' in navigator.storage) {
+                    try {
+                        const estimate = await navigator.storage.estimate();
+                        return {
+                            usage: estimate.usage || 0,
+                            quota: estimate.quota || 0,
+                        };
+                    } catch (e) {
+                        return null;
+                    }
+                }
+                return null;
+            }
+
+            // ==================== Toast ====================
+            function showToast(message, type = 'info', duration = 3000) {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+                toast.textContent = `${icons[type] || 'ℹ️'} ${message}`;
+                toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.animation = 'fadeOut 0.3s ease forwards';
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
+
+            // ==================== GitHub API ====================
+            function getGitHubHeaders() {
+                const headers = {
+                    'Accept': 'application/vnd.github.v3+json',
+                };
+                const token = getSavedToken();
+                if (token) {
+                    headers['Authorization'] = `token ${token}`;
+                }
+                return headers;
+            }
+
+            function getSavedToken() {
+                try {
+                    return localStorage.getItem('github_token_zzc0595') || '';
+                } catch (e) {
+                    return '';
+                }
+            }
+
+            function saveToken(token) {
+                try {
+                    localStorage.setItem('github_token_zzc0595', token);
+                } catch (e) { /* ignore */ }
+            }
+
+            function clearToken() {
+                try {
+                    localStorage.removeItem('github_token_zzc0595');
+                } catch (e) { /* ignore */ }
+            }
+
+            async function fetchGitHubContents(path = '') {
+                const url = REPO_API_BASE + (path ? path : '');
+                const response = await fetch(url, { headers: getGitHubHeaders() });
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error('路径不存在');
+                    }
+                    if (response.status === 403) {
+                        const remaining = response.headers.get('X-RateLimit-Remaining');
+                        if (remaining === '0') {
+                            throw new Error('API 速率限制已达上限，请稍后再试或配置 Token');
+                        }
+                        throw new Error('访问被拒绝 (403)，请检查仓库是否为公开仓库');
+                    }
+                    throw new Error(`GitHub API 错误: ${response.status} ${response.statusText}`);
+                }
+                const data = await response.json();
+                return data;
+            }
+
+            async function uploadToGitHub(path, contentBase64, message) {
+                const fullPath = (githubPath ? githubPath + '/' : '') + path;
+                const url = REPO_API_BASE + fullPath;
+                const body = {
+                    message: message || `上传文件: ${path}`,
+                    content: contentBase64,
+                };
+                // Check if file exists to get sha
+                try {
+                    const existingResp = await fetch(url, { headers: getGitHubHeaders() });
+                    if (existingResp.ok) {
+                        const existingData = await existingResp.json();
+                        if (existingData.sha) {
+                            body.sha = existingData.sha;
+                        }
+                    }
+                } catch (e) { /* ignore */ }
+
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        ...getGitHubHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(body),
+                });
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.message || `上传失败: ${response.status}`);
+                }
+                return response.json();
+            }
+
+            // ==================== File Type Helpers ====================
+            function getFileIconInfo(name, isDir) {
+                if (isDir) return { emoji: '📁', cls: 'folder' };
+                const ext = name.split('.').pop()?.toLowerCase() || '';
+                const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'avif', 'heic'];
+                const codeExts = ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'scss', 'less', 'json', 'xml', 'py',
+                    'java', 'c', 'cpp', 'h', 'rb', 'go', 'rs', 'swift', 'kt', 'vue', 'svelte', 'sh', 'bash',
+                    'yml', 'yaml', 'toml', 'md', 'mdx', 'sql', 'graphql', 'php', 'dart'
+                ];
+                const docExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'rtf', 'odt'];
+                const archiveExts = ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'lz', 'zst'];
+
+                if (imageExts.includes(ext)) return { emoji: '🖼️', cls: 'image' };
+                if (codeExts.includes(ext)) return { emoji: '📝', cls: 'code' };
+                if (docExts.includes(ext)) return { emoji: '📄', cls: 'doc' };
+                if (archiveExts.includes(ext)) return { emoji: '📦', cls: 'archive' };
+                if (ext === 'mp4' || ext === 'mov' || ext === 'avi' || ext === 'mkv') return { emoji: '🎬', cls: 'image' };
+                if (ext === 'mp3' || ext === 'wav' || ext === 'flac' || ext === 'ogg') return { emoji: '🎵',
+                cls: 'archive' };
+                return { emoji: '📎', cls: '' };
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === undefined || bytes === null) return '未知大小';
+                if (bytes === 0) return '0 B';
+                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                const size = bytes / Math.pow(1024, i);
+                return size.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+            }
+
+            function formatDate(dateStr) {
+                if (!dateStr) return '';
+                const d = new Date(dateStr);
+                const now = new Date();
+                const diffMs = now - d;
+                const diffMin = Math.floor(diffMs / 60000);
+                if (diffMin < 1) return '刚刚';
+                if (diffMin < 60) return `${diffMin} 分钟前`;
+                const diffHours = Math.floor(diffMin / 60);
+                if (diffHours < 24) return `${diffHours} 小时前`;
+                const diffDays = Math.floor(diffHours / 24);
+                if (diffDays < 30) return `${diffDays} 天前`;
+                return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            }
+
+            // ==================== Render ====================
+            function getFilteredFiles() {
+                const source = currentTab === 'github' ? githubFiles : localFiles;
+                if (!searchQuery.trim()) return source;
+                const q = searchQuery.toLowerCase().trim();
+                return source.filter(f => {
+                    const name = (f.name || '').toLowerCase();
+                    return name.includes(q);
+                });
+            }
+
+            function renderBreadcrumb() {
+                if (currentTab !== 'github') {
+                    breadcrumbContainer.innerHTML = '';
+                    return;
+                }
+                const parts = githubPath.split('/').filter(Boolean);
+                let html = '<div class="breadcrumb">';
+                html += '<span data-path="">🏠 根目录</span>';
+                if (parts.length > 0) {
+                    html += ' <span class="sep">›</span> ';
+                }
+                let accumulated = '';
+                parts.forEach((part, i) => {
+                    accumulated += (accumulated ? '/' : '') + part;
+                    if (i === parts.length - 1) {
+                        html += `<span class="current">📁 ${escapeHTML(part)}</span>`;
+                    } else {
+                        html +=
+                            `<span data-path="${escapeHTML(accumulated)}">${escapeHTML(part)}</span> <span class="sep">›</span> `;
+                    }
+                });
+                html += '</div>';
+                breadcrumbContainer.innerHTML = html;
+
+                // Add click handlers
+                breadcrumbContainer.querySelectorAll('span[data-path]').forEach(span => {
+                    span.addEventListener('click', () => {
+                        const p = span.getAttribute('data-path') || '';
+                        navigateGitHubPath(p);
+                    });
+                });
+            }
+
+            function renderFileList() {
+                const files = getFilteredFiles();
+                if (files.length === 0) {
+                    const emptyMsg = searchQuery ? '没有匹配的文件' : (currentTab === 'github' ? '该目录为空' :
+                        '还没有上传任何文件');
+                    const emptyHint = searchQuery ? '尝试其他搜索词' : (currentTab === 'github' ? '' : '拖拽文件或点击上方按钮上传');
+                    fileListContainer.innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-state-icon">${searchQuery ? '🔍' : '📭'}</span>
+                        <div class="empty-state-text">${emptyMsg}</div>
+                        ${emptyHint ? `<div class="empty-state-hint">${emptyHint}</div>` : ''}
+                    </div>`;
+                    return;
+                }
+
+                let html = '<ul class="file-list">';
+                files.forEach((f, index) => {
+                    const isDir = f.type === 'dir' || f.isDir === true;
+                    const iconInfo = getFileIconInfo(f.name, isDir);
+                    const sizeStr = isDir ? '目录' : formatFileSize(f.size || f.fileSize || 0);
+                    const dateStr = formatDate(f.timestamp || f.uploadDate || '');
+                    const sourceBadge = currentTab === 'github' ?
+                        '<span class="badge badge-gh">GitHub</span>' :
+                        '<span class="badge badge-local">本地</span>';
+                    const isSelected = currentTab === 'local' && selectedLocalKeys.has(f.id || f.name);
+                    const itemClass = isSelected ? 'file-item selected' : 'file-item';
+
+                    html += `
+                    <li class="${itemClass}" data-index="${index}" data-name="${escapeHTML(f.name)}" data-is-dir="${isDir}">
+                        <div class="file-icon ${iconInfo.cls}">${iconInfo.emoji}</div>
+                        <div class="file-info">
+                            <div class="file-name" title="${escapeHTML(f.name)}">${escapeHTML(f.name)}</div>
+                            <div class="file-meta">${sizeStr} · ${dateStr} ${sourceBadge}</div>
+                        </div>
+                        <div class="file-actions">
+                            ${isDir ? `
+                                <button class="btn btn-ghost btn-xs enter-dir-btn" title="进入目录">📂 打开</button>
+                            ` : `
+                                <button class="btn btn-primary btn-xs download-btn" title="下载">⬇️</button>
+                            `}
+                            ${currentTab === 'local' && !isDir ? `
+                                <button class="btn btn-danger btn-xs delete-btn" title="删除">🗑️</button>
+                            ` : ''}
+                        </div>
+                    </li>`;
+                });
+                html += '</ul>';
+                fileListContainer.innerHTML = html;
+
+                // Attach event listeners
+                const items = fileListContainer.querySelectorAll('.file-item');
+                items.forEach(item => {
+                    const index = parseInt(item.getAttribute('data-index'));
+                    const isDir = item.getAttribute('data-is-dir') === 'true';
+                    const file = files[index];
+                    if (!file) return;
+
+                    // Click on item (not on buttons)
+                    item.addEventListener('click', (e) => {
+                        // Ignore clicks on buttons
+                        if (e.target.closest('button')) return;
+
+                        if (currentTab === 'local' && !isDir) {
+                            // Toggle selection
+                            const key = file.id || file.name;
+                            if (selectedLocalKeys.has(key)) {
+                                selectedLocalKeys.delete(key);
+                            } else {
+                                selectedLocalKeys.add(key);
+                            }
+                            renderFileList();
+                            updateSelectionUI();
+                        }
+                    });
+
+                    // Enter directory button
+                    const enterBtn = item.querySelector('.enter-dir-btn');
+                    if (enterBtn) {
+                        enterBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (currentTab === 'github' && file.type === 'dir') {
+                                const newPath = file.path || (githubPath ? githubPath +
+                                    '/' + file.name : file.name);
+                                navigateGitHubPath(newPath);
+                            }
+                        });
+                    }
+
+                    // Download button
+                    const downloadBtn = item.querySelector('.download-btn');
+                    if (downloadBtn) {
+                        downloadBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            downloadFile(file);
+                        });
+                    }
+
+                    // Delete button
+                    const deleteBtn = item.querySelector('.delete-btn');
+                    if (deleteBtn) {
+                        deleteBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openDeleteModal(file.id || file.name, 'local', file.name);
+                        });
+                    }
+                });
+
+                updateSelectionUI();
+            }
+
+            function updateSelectionUI() {
+                if (currentTab !== 'local') return;
+                const count = selectedLocalKeys.size;
+                // Update card header with selection info
+                if (count > 0) {
+                    cardTitle.innerHTML = `📋 已选择 <strong>${count}</strong> 个文件`;
+                } else {
+                    cardTitle.textContent = '💾 本地文件';
+                }
+                // Could add batch action buttons here
+            }
+
+            function renderAll() {
+                renderBreadcrumb();
+                renderFileList();
+                updateUploadZoneVisibility();
+                updateSearchVisibility();
+                if (currentTab === 'github') {
+                    cardTitle.textContent = '📂 仓库文件';
+                } else if (selectedLocalKeys.size === 0) {
+                    cardTitle.textContent = '💾 本地文件';
+                }
+            }
+
+            function updateUploadZoneVisibility() {
+                uploadZoneContainer.style.display = currentTab === 'local' ? 'block' : 'none';
+            }
+
+            function updateSearchVisibility() {
+                // Search is always visible
+                searchWrap.style.display = 'flex';
+            }
+
+            // ==================== Actions ====================
+            async function navigateGitHubPath(path) {
+                githubPath = path;
+                showToast('正在加载...', 'info', 1500);
+                try {
+                    githubFiles = await fetchGitHubContents(path);
+                    // Normalize: ensure array
+                    if (!Array.isArray(githubFiles)) {
+                        githubFiles = [githubFiles]; // single file response
+                    }
+                    // Sort: directories first, then files, alphabetically
+                    githubFiles.sort((a, b) => {
+                        if (a.type === 'dir' && b.type !== 'dir') return -1;
+                        if (a.type !== 'dir' && b.type === 'dir') return 1;
+                        return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+                    });
+                    renderAll();
+                } catch (err) {
+                    showToast('加载失败: ' + err.message, 'error', 4000);
+                    githubFiles = [];
+                    renderAll();
+                }
+            }
+
+            async function loadLocalFiles() {
+                try {
+                    localFiles = await dbGetAllFiles();
+                    // Sort by timestamp desc
+                    localFiles.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    selectedLocalKeys.clear();
+                    renderAll();
+                } catch (err) {
+                    showToast('读取本地文件失败: ' + err.message, 'error');
+                    localFiles = [];
+                    renderAll();
+                }
+            }
+
+            async function downloadFile(file) {
+                try {
+                    if (currentTab === 'github') {
+                        // Download from GitHub
+                        const downloadUrl = file.download_url;
+                        if (!downloadUrl) {
+                            showToast('无法获取下载链接', 'error');
+                            return;
+                        }
+                        showToast('正在下载: ' + file.name, 'info', 2000);
+                        const response = await fetch(downloadUrl, { headers: getGitHubHeaders() });
+                        if (!response.ok) throw new Error('下载失败');
+                        const blob = await response.blob();
+                        triggerBlobDownload(blob, file.name);
+                        showToast('下载完成: ' + file.name, 'success');
+                    } else {
+                        // Download from IndexedDB
+                        const blob = file.blob || file.data;
+                        if (!blob) {
+                            showToast('文件数据不可用', 'error');
+                            return;
+                        }
+                        // Reconstruct blob if stored as ArrayBuffer or base64
+                        let downloadBlob;
+                        if (blob instanceof Blob) {
+                            downloadBlob = blob;
+                        } else if (blob instanceof ArrayBuffer) {
+                            downloadBlob = new Blob([blob], { type: file.mimeType || 'application/octet-stream' });
+                        } else if (typeof blob === 'string' && blob.startsWith('data:')) {
+                            // base64 data URL
+                            const resp = await fetch(blob);
+                            downloadBlob = await resp.blob();
+                        } else {
+                            downloadBlob = new Blob([blob], { type: file.mimeType || 'application/octet-stream' });
+                        }
+                        triggerBlobDownload(downloadBlob, file.name);
+                        showToast('下载完成: ' + file.name, 'success');
+                    }
+                } catch (err) {
+                    showToast('下载失败: ' + err.message, 'error');
+                }
+            }
+
+            function triggerBlobDownload(blob, filename) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }
+
+            function openDeleteModal(key, source, name) {
+                pendingDeleteKey = key;
+                pendingDeleteSource = source;
+                deleteModalBody.textContent = `确定要删除 "${name}" 吗？此操作无法撤销。`;
+                deleteModal.style.display = 'flex';
+            }
+
+            async function confirmDelete() {
+                if (!pendingDeleteKey) return;
+                const key = pendingDeleteKey;
+                const source = pendingDeleteSource;
+                pendingDeleteKey = null;
+                pendingDeleteSource = null;
+                deleteModal.style.display = 'none';
+
+                try {
+                    if (source === 'local') {
+                        await dbDeleteFile(key);
+                        selectedLocalKeys.delete(key);
+                        await loadLocalFiles();
+                        showToast('文件已删除', 'success');
+                    } else if (source === 'github') {
+                        // Deleting from GitHub requires API call with token
+                        const token = getSavedToken();
+                        if (!token) {
+                            showToast('删除 GitHub 文件需要配置 Token', 'error');
+                            return;
+                        }
+                        const fullPath = (githubPath ? githubPath + '/' : '') + key;
+                        const url = REPO_API_BASE + fullPath;
+                        // Get sha first
+                        const resp = await fetch(url, { headers: getGitHubHeaders() });
+                        if (!resp.ok) throw new Error('获取文件信息失败');
+                        const fileData = await resp.json();
+                        const deleteResp = await fetch(url, {
+                            method: 'DELETE',
+                            headers: {
+                                ...getGitHubHeaders(),
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                message: `删除文件: ${key}`,
+                                sha: fileData.sha,
+                            }),
+                        });
+                        if (!deleteResp.ok) throw new Error('删除失败');
+                        showToast('文件已从仓库删除', 'success');
+                        await navigateGitHubPath(githubPath);
+                    }
+                } catch (err) {
+                    showToast('删除失败: ' + err.message, 'error');
+                }
+            }
+
+            async function handleFileUpload(files) {
+                if (isUploading) {
+                    showToast('正在上传中，请稍候', 'info');
+                    return;
+                }
+                if (!files || files.length === 0) return;
+
+                const token = getSavedToken();
+                const uploadToGH = !!token && currentTab === 'github';
+
+                isUploading = true;
+                const totalFiles = files.length;
+                let completed = 0;
+                let errors = 0;
+
+                if (uploadToGH && currentTab === 'github') {
+                    // Upload to GitHub
+                    progressWrap.style.display = 'block';
+                    progressFill.style.width = '0%';
+                    showToast(`开始上传 ${totalFiles} 个文件到 GitHub...`, 'info');
+
+                    for (const file of files) {
+                        try {
+                            const arrayBuffer = await file.arrayBuffer();
+                            const base64 = arrayBufferToBase64(arrayBuffer);
+                            await uploadToGitHub(file.name, base64, `上传文件: ${file.name}`);
+                            completed++;
+                            progressFill.style.width = `${(completed / totalFiles) * 100}%`;
+                        } catch (err) {
+                            errors++;
+                            showToast(`${file.name}: ${err.message}`, 'error', 4000);
+                        }
+                    }
+                    progressWrap.style.display = 'none';
+                    progressFill.style.width = '0%';
+                    if (completed > 0) {
+                        showToast(`成功上传 ${completed} 个文件${errors > 0 ? `，${errors} 个失败` : ''}`,
+                            errors > 0 ? 'info' : 'success');
+                        await navigateGitHubPath(githubPath);
+                    }
+                } else {
+                    // Upload to IndexedDB
+                    progressWrap.style.display = 'block';
+                    progressFill.style.width = '0%';
+                    const totalSize = Array.from(files).reduce((s, f) => s + f.size, 0);
+                    if (totalSize > 200 * 1024 * 1024) {
+                        showToast('总文件大小较大（>200MB），上传可能需要一些时间', 'info', 4000);
+                    }
+
+                    for (const file of files) {
+                        try {
+                            const blob = new Blob([await file.arrayBuffer()], { type: file.type ||
+                                    'application/octet-stream' });
+                            const fileObj = {
+                                id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8),
+                                name: file.name,
+                                fileSize: file.size,
+                                mimeType: file.type || 'application/octet-stream',
+                                blob: blob,
+                                timestamp: Date.now(),
+                                uploadDate: new Date().toISOString(),
+                                isDir: false,
+                            };
+                            await dbAddFile(fileObj);
+                            completed++;
+                            progressFill.style.width = `${(completed / totalFiles) * 100}%`;
+                        } catch (err) {
+                            errors++;
+                            showToast(`${file.name}: ${err.message}`, 'error', 4000);
+                        }
+                    }
+                    progressWrap.style.display = 'none';
+                    progressFill.style.width = '0%';
+                    if (completed > 0) {
+                        showToast(`成功存储 ${completed} 个文件到本地${errors > 0 ? `，${errors} 个失败` : ''}`,
+                            errors > 0 ? 'info' : 'success');
+                        await loadLocalFiles();
+                    }
+                }
+                isUploading = false;
+            }
+
+            function arrayBufferToBase64(buffer) {
+                const bytes = new Uint8Array(buffer);
+                let binary = '';
+                const chunkSize = 8192;
+                for (let i = 0; i < bytes.length; i += chunkSize) {
+                    const chunk = bytes.subarray(i, i + chunkSize);
+                    binary += String.fromCharCode.apply(null, chunk);
+                }
+                return btoa(binary);
+            }
+
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ==================== Event Listeners ====================
+            // Tab switching
+            tabsContainer.addEventListener('click', (e) => {
+                const tab = e.target.closest('.tab');
+                if (!tab) return;
+                const tabName = tab.getAttribute('data-tab');
+                if (tabName === currentTab) return;
+                currentTab = tabName;
+                // Update active tab
+                $$('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                selectedLocalKeys.clear();
+                searchQuery = '';
+                searchInput.value = '';
+                if (currentTab === 'github') {
+                    navigateGitHubPath(githubPath);
+                } else {
+                    loadLocalFiles();
+                }
+                updateUploadZoneVisibility();
+            });
+
+            // Search
+            searchInput.addEventListener('input', () => {
+                searchQuery = searchInput.value;
+                renderFileList();
+            });
+
+            // Upload zone click
+            uploadZone.addEventListener('click', () => {
+                if (isUploading) return;
+                fileInput.click();
+            });
+
+            // File input change
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    handleFileUpload(fileInput.files);
+                    fileInput.value = '';
+                }
+            });
+
+            // Drag and drop
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.add('drag-over');
+            });
+            uploadZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.remove('drag-over');
+            });
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadZone.classList.remove('drag-over');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    handleFileUpload(e.dataTransfer.files);
+                }
+            });
+
+            // Global drag and drop on the card for local tab
+            const mainCard = $('#mainCard');
+            mainCard.addEventListener('dragover', (e) => {
+                if (currentTab !== 'local') return;
+                e.preventDefault();
+                uploadZone.classList.add('drag-over');
+            });
+            mainCard.addEventListener('dragleave', (e) => {
+                if (e.target === mainCard || e.target === uploadZone) {
+                    uploadZone.classList.remove('drag-over');
+                }
+            });
+            mainCard.addEventListener('drop', (e) => {
+                if (currentTab !== 'local') return;
+                e.preventDefault();
+                uploadZone.classList.remove('drag-over');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    handleFileUpload(e.dataTransfer.files);
+                }
+            });
+
+            // Main upload button
+            $('#btnUploadMain').addEventListener('click', () => {
+                if (isUploading) return;
+                if (currentTab === 'github' && !getSavedToken()) {
+                    showToast('上传到 GitHub 需要配置 Token，请点击设置按钮', 'info', 4000);
+                    openSettingsModal();
+                    return;
+                }
+                if (currentTab === 'github' && getSavedToken()) {
+                    // Upload to GitHub - switch to local upload zone or use file input
+                    fileInput.click();
+                } else {
+                    fileInput.click();
+                }
+            });
+
+            // Settings modal
+            function openSettingsModal() {
+                const token = getSavedToken();
+                tokenInput.value = token;
+                tokenStatus.textContent = token ? '✅ 已配置' : '⚠️ 未配置';
+                tokenStatus.style.color = token ? 'var(--success)' : 'var(--text-secondary)';
+                settingsModal.style.display = 'flex';
+            }
+
+            $('#btnSettings').addEventListener('click', openSettingsModal);
+            $('#btnSettingsCancel').addEventListener('click', () => {
+                settingsModal.style.display = 'none';
+            });
+            $('#btnSettingsSave').addEventListener('click', () => {
+                const newToken = tokenInput.value.trim();
+                if (newToken) {
+                    saveToken(newToken);
+                    tokenStatus.textContent = '✅ 已配置';
+                    tokenStatus.style.color = 'var(--success)';
+                    showToast('Token 已保存', 'success');
+                } else {
+                    clearToken();
+                    tokenStatus.textContent = '⚠️ 未配置';
+                    tokenStatus.style.color = 'var(--text-secondary)';
+                    showToast('Token 已清除', 'info');
+                }
+                settingsModal.style.display = 'none';
+                // Refresh GitHub data if on that tab
+                if (currentTab === 'github') {
+                    navigateGitHubPath(githubPath);
+                }
+            });
+            $('#btnClearToken').addEventListener('click', () => {
+                tokenInput.value = '';
+                clearToken();
+                tokenStatus.textContent = '⚠️ 未配置';
+                tokenStatus.style.color = 'var(--text-secondary)';
+                showToast('Token 已清除', 'info');
+            });
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.style.display = 'none';
+                }
+            });
+
+            // Delete modal
+            $('#btnDeleteCancel').addEventListener('click', () => {
+                deleteModal.style.display = 'none';
+                pendingDeleteKey = null;
+                pendingDeleteSource = null;
+            });
+            $('#btnDeleteConfirm').addEventListener('click', confirmDelete);
+            deleteModal.addEventListener('click', (e) => {
+                if (e.target === deleteModal) {
+                    deleteModal.style.display = 'none';
+                    pendingDeleteKey = null;
+                    pendingDeleteSource = null;
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Escape to close modals
+                if (e.key === 'Escape') {
+                    if (deleteModal.style.display === 'flex') {
+                        deleteModal.style.display = 'none';
+                        pendingDeleteKey = null;
+                        pendingDeleteSource = null;
+                    }
+                    if (settingsModal.style.display === 'flex') {
+                        settingsModal.style.display = 'none';
+                    }
+                }
+                // Ctrl+O to open file dialog
+                if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+                    e.preventDefault();
+                    if (!isUploading && (currentTab === 'local' || getSavedToken())) {
+                        fileInput.click();
+                    }
+                }
+                // Delete key for selected local files
+                if (e.key === 'Delete' && currentTab === 'local' && selectedLocalKeys.size > 0) {
+                    e.preventDefault();
+                    const keys = Array.from(selectedLocalKeys);
+                    if (keys.length === 1) {
+                        const file = localFiles.find(f => (f.id || f.name) === keys[0]);
+                        openDeleteModal(keys[0], 'local', file?.name || keys[0]);
+                    } else {
+                        // Batch delete
+                        pendingDeleteKey = keys;
+                        pendingDeleteSource = 'local-batch';
+                        deleteModalBody.textContent = `确定要删除选中的 ${keys.length} 个文件吗？此操作无法撤销。`;
+                        deleteModal.style.display = 'flex';
+                    }
+                }
+                // Ctrl+A select all in local tab
+                if ((e.ctrlKey || e.metaKey) && e.key === 'a' && currentTab === 'local' && document.activeElement !==
+                    searchInput) {
+                    e.preventDefault();
+                    const filtered = getFilteredFiles();
+                    if (filtered.length > 0) {
+                        const allSelected = filtered.every(f => selectedLocalKeys.has(f.id || f.name));
+                        if (allSelected) {
+                            selectedLocalKeys.clear();
+                        } else {
+                            filtered.forEach(f => selectedLocalKeys.add(f.id || f.name));
+                        }
+                        renderFileList();
+                    }
+                }
+            });
+
+            // Override confirmDelete for batch operations
+            const origConfirmDelete = confirmDelete;
+            confirmDelete = async function() {
+                if (pendingDeleteSource === 'local-batch' && Array.isArray(pendingDeleteKey)) {
+                    const keys = pendingDeleteKey;
+                    pendingDeleteKey = null;
+                    pendingDeleteSource = null;
+                    deleteModal.style.display = 'none';
+                    try {
+                        await dbDeleteMultiple(keys);
+                        keys.forEach(k => selectedLocalKeys.delete(k));
+                        await loadLocalFiles();
+                        showToast(`已删除 ${keys.length} 个文件`, 'success');
+                    } catch (err) {
+                        showToast('批量删除失败: ' + err.message, 'error');
+                    }
+                    return;
+                }
+                return origConfirmDelete();
+            };
+
+            // Paste to upload
+            document.addEventListener('paste', (e) => {
+                if (currentTab !== 'local' && !(currentTab === 'github' && getSavedToken())) return;
+                if (isUploading) return;
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                const files = [];
+                for (const item of items) {
+                    if (item.kind === 'file') {
+                        const file = item.getAsFile();
+                        if (file) files.push(file);
+                    }
+                }
+                if (files.length > 0) {
+                    e.preventDefault();
+                    handleFileUpload(files);
+                }
+            });
+
+            // ==================== Initialization ====================
+            async function init() {
+                // Load token status
+                const token = getSavedToken();
+                if (token) {
+                    tokenStatus.textContent = '✅ 已配置';
+                    tokenStatus.style.color = 'var(--success)';
+                }
+
+                // Load initial data
+                await navigateGitHubPath('');
+                await loadLocalFiles();
+                // Default to github tab
+                currentTab = 'github';
+                $$('.tab').forEach(t => t.classList.remove('active'));
+                const githubTab = document.querySelector('.tab[data-tab="github"]');
+                if (githubTab) githubTab.classList.add('active');
+                updateUploadZoneVisibility();
+                updateSearchVisibility();
+                renderAll();
+            }
+
+            init().catch(err => {
+                console.error('Initialization error:', err);
+                showToast('初始化出错，请刷新页面', 'error', 5000);
+            });
+
+            // Log
+            console.log('📁 文件管理器已就绪 - zzc0595.github.io');
+            console.log('  🌐 GitHub 仓库文件浏览');
+            console.log('  💾 本地 IndexedDB 存储');
+            console.log('  ⌨️  快捷键: Ctrl+O 上传 | Delete 删除 | Ctrl+A 全选 | Esc 关闭弹窗');
+            console.log('  📋 支持拖拽上传和粘贴上传');
+        })();
+    </script>
+</body>
+</html>
