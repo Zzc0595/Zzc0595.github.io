@@ -1,763 +1,447 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🐍 贪吃蛇大作战 · zzc制作</title>
-    <style>
-        :root {
-            --bg: #1a1a2e;
-            --panel: #16213e;
-            --accent: #e94560;
-            --gold: #f5c518;
-            --text: #eee;
-            --cell: 20px;
-            --dpad-size: 62px;
-            --dpad-gap: 10px;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZZC · 个人主页</title>
+  <style>
+    /* ========= Reset & Base ========= */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      overflow-x: hidden;
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: var(--bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            overflow-y: auto;
-            background-image:
-                radial-gradient(ellipse at 30% 20%, rgba(233,68,96,0.08) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(72,219,251,0.06) 0%, transparent 60%);
-            padding: 20px 12px;
-        }
+    /* ========= 粒子 Canvas ========= */
+    #particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
 
-        /* 用户协议弹窗 */
-        .agreement-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-            z-index: 999; display: flex; align-items: center; justify-content: center;
-            transition: opacity 0.3s;
-        }
-        .agreement-overlay.hidden { display: none; }
-        .agreement-box {
-            background: var(--panel); border-radius: 24px; padding: 28px 22px;
-            max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 2px rgba(255,255,255,0.05) inset;
-            text-align: center; color: var(--text); border: 1px solid rgba(255,255,255,0.1);
-        }
-        .agreement-box h2 { color: var(--gold); font-size: 22px; margin-bottom: 12px; letter-spacing: 2px; }
-        .agreement-text {
-            background: rgba(0,0,0,0.3); border-radius: 12px; padding: 16px;
-            margin-bottom: 18px; text-align: left; font-size: 13px; line-height: 1.8;
-            color: #bbb; max-height: 200px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.06);
-        }
-        .agreement-text p { margin-bottom: 8px; }
-        .agreement-check {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            margin-bottom: 18px; font-size: 14px; color: #ddd; cursor: pointer;
-        }
-        .agreement-check input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
-        .btn-agree {
-            width: 100%; padding: 14px; font-size: 16px; font-weight: 700; letter-spacing: 2px;
-            background: var(--accent); color: #fff; border: none; border-radius: 30px;
-            cursor: pointer; opacity: 0.5; pointer-events: none; transition: all 0.2s;
-            box-shadow: 0 6px 20px rgba(233,68,96,0.35);
-        }
-        .btn-agree.active { opacity: 1; pointer-events: auto; }
-        .btn-agree:active { transform: scale(0.96); }
+    /* ========= Hero ========= */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
 
-        /* 游戏主界面 */
-        .game-wrapper {
-            background: var(--panel); border-radius: 28px; padding: 24px 18px 18px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.04) inset;
-            display: flex; flex-direction: column; align-items: center; gap: 14px;
-            max-width: 500px; width: 100%; position: relative;
-        }
-        .zzc-header {
-            text-align: center; color: var(--gold); font-size: 14px; font-weight: 700;
-            letter-spacing: 3px; text-shadow: 0 0 20px rgba(245,197,24,0.5);
-            animation: zzcGlow 2s ease-in-out infinite;
-        }
-        @keyframes zzcGlow {
-            0%,100%{text-shadow:0 0 20px rgba(245,197,24,0.5);}
-            50%{text-shadow:0 0 35px rgba(245,197,24,0.9),0 0 60px rgba(245,197,24,0.4);}
-        }
-        .game-header {
-            display: flex; align-items: center; justify-content: space-between;
-            width: 100%; gap: 8px; flex-wrap: wrap;
-        }
-        .score-panel,.best-score-panel {
-            background: rgba(0,0,0,0.35); border-radius: 14px; padding: 8px 16px;
-            display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.08);
-            flex: 1; min-width: 90px; justify-content: center;
-        }
-        .score-icon { font-size: 24px; }
-        .score-label { color: #aaa; font-size: 11px; letter-spacing: 1.5px; font-weight: 600; }
-        .score-value { color: #fff; font-size: 26px; font-weight: 800; line-height: 1; min-width: 40px; text-align: center; transition: transform 0.15s; }
-        .score-pop { transform: scale(1.35); color: var(--gold); }
-        .best-score-icon { font-size: 20px; }
-        .best-score-value { color: var(--gold); font-size: 20px; font-weight: 700; }
-        .difficulty-badge {
-            font-size: 12px; padding: 8px 16px; border-radius: 30px;
-            background: rgba(72,219,251,0.1); color: #48dbfb; letter-spacing: 1px;
-            font-weight: 700; cursor: pointer; border: 1px solid rgba(72,219,251,0.3);
-            white-space: nowrap;
-        }
+    .hero .glow {
+      font-size: clamp(3rem, 10vw, 6rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #f093fb, #f5576c, #4facfe, #00f2fe);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradShift 6s ease infinite;
+      letter-spacing: 4px;
+      text-shadow: 0 0 80px rgba(79, 172, 254, .3);
+    }
 
-        canvas {
-            border-radius: 18px; display: block;
-            box-shadow: 0 0 0 3px rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.5);
-            background: #0d1117; width: 100%; height: auto; max-width: 440px; aspect-ratio: 1/1;
-        }
-        .canvas-watermark {
-            text-align: center; color: rgba(245,197,24,0.25); font-size: 11px;
-            font-weight: 600; letter-spacing: 2px; margin-top: -10px; margin-bottom: 4px;
-        }
-        .controls-row {
-            display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center;
-        }
-        .btn {
-            padding: 12px 24px; border-radius: 30px; border: none; cursor: pointer;
-            font-size: 15px; font-weight: 700; letter-spacing: 1px;
-            background: var(--accent); color: #fff; box-shadow: 0 6px 20px rgba(233,68,96,0.35);
-            transition: all 0.2s; font-family: inherit; touch-action: manipulation;
-        }
-        .btn:active { transform: scale(0.95); }
-        .btn-outline {
-            background: transparent; border: 2px solid rgba(255,255,255,0.25);
-            color: #ccc; box-shadow: none;
-        }
-        .btn-outline:active { background: rgba(255,255,255,0.08); }
-        .zzc-btn-tag {
-            color: rgba(245,197,24,0.5); font-size: 10px; letter-spacing: 2px;
-            font-weight: 600; text-align: center;
-        }
+    @keyframes gradShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
-        /* 打赏按钮 */
-        .donate-btn {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            background: linear-gradient(135deg, #f5c518, #ff8c00); color: #000;
-            font-weight: 800; font-size: 18px; padding: 16px 30px; border-radius: 50px;
-            border: none; cursor: pointer; box-shadow: 0 8px 25px rgba(245,197,24,0.5);
-            letter-spacing: 2px; margin-top: 6px; transition: all 0.2s;
-            touch-action: manipulation; width: 100%; max-width: 300px;
-        }
-        .donate-btn:active { transform: scale(0.94); box-shadow: 0 4px 15px rgba(245,197,24,0.6); }
+    .hero .subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+      margin-top: 1rem;
+      color: rgba(255,255,255,.5);
+      letter-spacing: 6px;
+      font-weight: 300;
+    }
 
-        .mobile-dpad {
-            display: grid;
-            grid-template-areas:". up ." "left . right" ". down .";
-            grid-template-columns: var(--dpad-size) var(--dpad-size) var(--dpad-size);
-            grid-template-rows: var(--dpad-size) var(--dpad-size) var(--dpad-size);
-            gap: var(--dpad-gap); justify-content: center; margin-top: 4px;
-        }
-        .dpad-btn {
-            width: var(--dpad-size); height: var(--dpad-size); border-radius: 50%;
-            background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.2);
-            color: #fff; font-size: 28px; cursor: pointer; display: flex;
-            align-items: center; justify-content: center; transition: all 0.1s;
-            touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .dpad-btn:active { background: rgba(255,255,255,0.25); border-color: #fff; transform: scale(0.88); box-shadow: 0 0 22px rgba(255,255,255,0.25); }
-        .dpad-up { grid-area: up; }
-        .dpad-down { grid-area: down; }
-        .dpad-left { grid-area: left; }
-        .dpad-right { grid-area: right; }
-        .swipe-hint { color: #888; font-size: 12px; text-align: center; margin-top: -6px; letter-spacing: 1px; }
-        .zzc-footer {
-            text-align: center; color: rgba(255,255,255,0.3); font-size: 10px;
-            letter-spacing: 2px; font-weight: 500; padding: 6px 0;
-            border-top: 1px solid rgba(255,255,255,0.05); width: 100%; margin-top: 2px;
-        }
-        .game-over-overlay {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
-            background: rgba(0,0,0,0.92); border-radius: 24px; padding: 28px 32px;
-            text-align: center; z-index: 10; opacity: 0; transition: all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
-            border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(12px);
-            pointer-events: none; width: fit-content; min-width: 220px;
-        }
-        .game-over-overlay.show { transform: translate(-50%,-50%) scale(1); opacity: 1; pointer-events: auto; }
-        .game-over-overlay h2 { font-size: 30px; margin-bottom: 8px; color: #ff5a75; }
-        .final-score { font-size: 52px; font-weight: 900; color: #fff; line-height: 1; margin: 8px 0; }
-        .sub-text { color: #aaa; font-size: 13px; margin-bottom: 16px; }
-        .zzc-overlay-tag { color: rgba(245,197,24,0.5); font-size: 10px; letter-spacing: 2px; margin-top: 6px; }
+    .hero .tagline {
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      color: rgba(255,255,255,.35);
+      max-width: 500px;
+      line-height: 1.8;
+    }
 
-        /* 彩蛋toast */
-        .easter-egg {
-            position: fixed; top: 20%; left: 50%; transform: translate(-50%,0);
-            background: rgba(0,0,0,0.9); color: var(--gold); font-weight: 800;
-            font-size: 18px; padding: 12px 24px; border-radius: 40px;
-            letter-spacing: 2px; z-index: 100; animation: toastPop 2.5s ease forwards;
-            pointer-events: none; border: 1px solid var(--gold);
-            box-shadow: 0 0 30px rgba(245,197,24,0.5);
-        }
-        @keyframes toastPop {
-            0%{opacity:0;transform:translate(-50%,20px) scale(0.8);}
-            20%{opacity:1;transform:translate(-50%,0) scale(1.05);}
-            80%{opacity:1;transform:translate(-50%,0) scale(1);}
-            100%{opacity:0;transform:translate(-50%,-20px) scale(0.9);}
-        }
+    .hero .scroll-hint {
+      margin-top: 4rem;
+      animation: bounce 2s infinite;
+      font-size: 1.5rem;
+      color: rgba(255,255,255,.2);
+      cursor: default;
+    }
 
-        @media (min-width: 769px) {
-            .mobile-dpad { display: none; }
-            .swipe-hint { display: none; }
-        }
-        @media (max-width: 400px) {
-            :root { --dpad-size: 54px; --dpad-gap: 6px; }
-            .game-wrapper { padding: 16px 10px 12px; }
-            .btn { padding: 10px 18px; font-size: 14px; }
-            .donate-btn { font-size: 16px; padding: 14px 20px; max-width: 250px; }
-        }
-    </style>
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(10px); }
+    }
+
+    /* ========= Section ========= */
+    section {
+      position: relative;
+      z-index: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 3rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 60%;
+      height: 3px;
+      background: linear-gradient(90deg, #4facfe, transparent);
+      border-radius: 2px;
+    }
+
+    /* ========= About ========= */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    @media (max-width: 700px) {
+      .about-grid { grid-template-columns: 1fr; }
+    }
+
+    .avatar-ring {
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f093fb, #4facfe);
+      padding: 4px;
+      margin: 0 auto;
+      box-shadow: 0 0 60px rgba(79, 172, 254, .15);
+    }
+
+    .avatar-ring .inner {
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      background: #0a0a0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #f093fb, #4facfe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .about-text p {
+      color: rgba(255,255,255,.6);
+      line-height: 2;
+      font-size: 1.05rem;
+    }
+
+    /* ========= Skills ========= */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .skill-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 16px;
+      padding: 1.4rem 1rem;
+      text-align: center;
+      transition: all .3s;
+      cursor: default;
+    }
+
+    .skill-card:hover {
+      background: rgba(255,255,255,.08);
+      border-color: rgba(79, 172, 254, .3);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(79, 172, 254, .08);
+    }
+
+    .skill-card .icon { font-size: 2rem; margin-bottom: .6rem; }
+    .skill-card .name { font-size: .9rem; color: rgba(255,255,255,.7); }
+
+    /* ========= Projects ========= */
+    .project-list { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .project-item {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+      transition: all .3s;
+      cursor: default;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media (max-width: 600px) {
+      .project-item { flex-direction: column; align-items: flex-start; gap: .8rem; }
+    }
+
+    .project-item:hover {
+      border-color: rgba(79, 172, 254, .25);
+      box-shadow: 0 4px 20px rgba(79, 172, 254, .05);
+    }
+
+    .project-item .info h3 {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,.85);
+      margin-bottom: 4px;
+    }
+
+    .project-item .info p {
+      color: rgba(255,255,255,.4);
+      font-size: .9rem;
+    }
+
+    .project-item .badge {
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: .75rem;
+      background: rgba(79, 172, 254, .12);
+      color: #4facfe;
+      border: 1px solid rgba(79, 172, 254, .15);
+      white-space: nowrap;
+    }
+
+    /* ========= Contact ========= */
+    .contact-links {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .contact-links a {
+      color: rgba(255,255,255,.5);
+      text-decoration: none;
+      font-size: 1.1rem;
+      padding: .5rem 1.2rem;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 30px;
+      transition: all .3s;
+    }
+
+    .contact-links a:hover {
+      color: #fff;
+      border-color: rgba(79, 172, 254, .4);
+      background: rgba(79, 172, 254, .05);
+    }
+
+    /* ========= Footer ========= */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 3rem 2rem;
+      color: rgba(255,255,255,.15);
+      font-size: .85rem;
+    }
+
+    footer span { color: #f5576c; }
+  </style>
 </head>
 <body>
 
-    <!-- 用户协议弹窗 -->
-    <div class="agreement-overlay" id="agreementOverlay">
-        <div class="agreement-box">
-            <h2>📜 用户协议与版权声明</h2>
-            <div class="agreement-text">
-                <p><strong>1. 版权归属</strong><br>本游戏由 <strong>zzc</strong> 独立设计、开发并维护，保留所有权利。zzc 是唯一的版权所有者。</p>
-                <p><strong>2. 使用条款</strong><br>玩家可以在任何设备上免费畅玩，但严禁未经 zzc 书面许可的复制、修改、反编译或商业使用。</p>
-                <p><strong>3. 风险提示</strong><br>本游戏可能导致上瘾、手指酸痛、在课堂上偷玩被发现等风险，zzc 不承担任何责任。</p>
-                <p><strong>4. 终极条款</strong><br>点击“同意”即代表你认可 zzc 的卓越才华，并承认该游戏是目前地球上最好玩的贪吃蛇。</p>
-                <p style="color:var(--gold); font-weight:bold;">—— zzc 出品，必属精品 ——</p>
-            </div>
-            <label class="agreement-check" id="agreementCheck">
-                <input type="checkbox" id="agreeCheckbox">
-                <span>✅ 我已阅读并同意以上全部条款（不勾不让玩）</span>
-            </label>
-            <button class="btn-agree" id="btnAgree" disabled>同意并开始游戏</button>
-        </div>
+<canvas id="particles"></canvas>
+
+<!-- ========= Hero ========= -->
+<section class="hero">
+  <h1 class="glow">ZZC</h1>
+  <p class="subtitle">CREATOR · DEVELOPER · DREAMER</p>
+  <p class="tagline">
+    用代码构建想象，用创意连接世界。<br>
+    —— 每一个像素都有它的意义。
+  </p>
+  <div class="scroll-hint">⌄</div>
+</section>
+
+<!-- ========= About ========= -->
+<section id="about">
+  <h2 class="section-title">关于我</h2>
+  <div class="about-grid">
+    <div class="avatar-ring">
+      <div class="inner">ZZC</div>
     </div>
-
-    <!-- 游戏主界面 -->
-    <div class="game-wrapper" id="gameWrapper">
-        <div class="zzc-header">⚡ zzc 制作 ⚡</div>
-        <div class="game-header">
-            <div class="score-panel">
-                <span class="score-icon">🍎</span>
-                <div>
-                    <div class="score-label">分数</div>
-                    <div class="score-value" id="scoreDisplay">0</div>
-                </div>
-            </div>
-            <div class="best-score-panel">
-                <span class="best-score-icon">🏆</span>
-                <div>
-                    <div class="score-label">最高</div>
-                    <div class="best-score-value" id="bestScoreDisplay">0</div>
-                </div>
-            </div>
-            <span class="difficulty-badge" id="diffBadge">⚡ 普通</span>
-        </div>
-        <canvas id="gameCanvas"></canvas>
-        <div class="canvas-watermark">🎮 zzc 制作 🎮</div>
-        <div class="swipe-hint">👆 在蛇身上滑动也能控制方向</div>
-        <div class="controls-row">
-            <button class="btn" id="btnStart">▶ 开始</button>
-            <button class="btn btn-outline" id="btnPause">⏸ 暂停</button>
-        </div>
-        <div class="zzc-btn-tag">—— zzc 制作 ——</div>
-
-        <!-- 打赏按钮（点击复制微信收款文本） -->
-        <button class="donate-btn" id="donateBtn">💰 打赏支持 zzc 💰</button>
-
-        <div class="mobile-dpad" id="mobileDpad">
-            <button class="dpad-btn dpad-up" data-dir="up">▲</button>
-            <button class="dpad-btn dpad-left" data-dir="left">◀</button>
-            <button class="dpad-btn dpad-right" data-dir="right">▶</button>
-            <button class="dpad-btn dpad-down" data-dir="down">▼</button>
-        </div>
-        <div class="zzc-footer">© 2024 zzc 制作 · 贪吃蛇大作战</div>
-
-        <div class="game-over-overlay" id="gameOverOverlay">
-            <h2>💥 游戏结束</h2>
-            <div class="final-score" id="finalScore">0</div>
-            <div class="sub-text">你的得分</div>
-            <button class="btn" id="btnRestart">🔄 再来一局</button>
-            <div class="zzc-overlay-tag">⚡ zzc 制作 ⚡</div>
-        </div>
+    <div class="about-text">
+      <p>
+        你好！我是 <strong style="color:rgba(255,255,255,.8);">ZZC</strong>，
+        一个热爱技术、设计 和 创造 的人。<br><br>
+        我相信好的作品源于热情与细节的打磨。
+        无论是写代码、做设计，还是探索新事物，
+        我都全力以赴。<br><br>
+        这个网站是我的小小宇宙，
+        欢迎你来看看。
+      </p>
     </div>
+  </div>
+</section>
 
-    <script>
-        (function() {
-            // ========== 用户协议逻辑 ==========
-            const agreementOverlay = document.getElementById('agreementOverlay');
-            const agreeCheckbox = document.getElementById('agreeCheckbox');
-            const btnAgree = document.getElementById('btnAgree');
+<!-- ========= Skills ========= -->
+<section id="skills">
+  <h2 class="section-title">技能</h2>
+  <div class="skills-grid">
+    <div class="skill-card"><div class="icon">🐍</div><div class="name">Python</div></div>
+    <div class="skill-card"><div class="icon">☕</div><div class="name">Java</div></div>
+    <div class="skill-card"><div class="icon">🌐</div><div class="name">HTML / CSS</div></div>
+    <div class="skill-card"><div class="icon">⚛️</div><div class="name">React</div></div>
+    <div class="skill-card"><div class="icon">🗄️</div><div class="name">MySQL</div></div>
+    <div class="skill-card"><div class="icon">🐳</div><div class="name">Docker</div></div>
+    <div class="skill-card"><div class="icon">📊</div><div class="name">数据分析</div></div>
+    <div class="skill-card"><div class="icon">🎨</div><div class="name">UI 设计</div></div>
+  </div>
+</section>
 
-            agreeCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    btnAgree.disabled = false;
-                    btnAgree.classList.add('active');
-                } else {
-                    btnAgree.disabled = true;
-                    btnAgree.classList.remove('active');
-                }
-            });
+<!-- ========= Projects ========= -->
+<section id="projects">
+  <h2 class="section-title">作品</h2>
+  <div class="project-list">
+    <div class="project-item">
+      <div class="info">
+        <h3>AI 个人助理</h3>
+        <p>基于 DeepSeek V4 Flash 的智能助手</p>
+      </div>
+      <span class="badge">进行中</span>
+    </div>
+    <div class="project-item">
+      <div class="info">
+        <h3>个人网站</h3>
+        <p>就是这个页面 —— 由 AI 帮我生成</p>
+      </div>
+      <span class="badge">最新</span>
+    </div>
+    <div class="project-item">
+      <div class="info">
+        <h3>更多作品 敬请期待...</h3>
+        <p>正在酝酿中，感谢关注</p>
+      </div>
+      <span class="badge">即将推出</span>
+    </div>
+  </div>
+</section>
 
-            btnAgree.addEventListener('click', function() {
-                if (agreeCheckbox.checked) {
-                    agreementOverlay.classList.add('hidden');
-                    loadBestScore();
-                    initGame();
-                    draw();
-                }
-            });
+<!-- ========= Contact ========= -->
+<section id="contact">
+  <h2 class="section-title">联系我</h2>
+  <p style="color:rgba(255,255,255,.4); margin-bottom:1.5rem;">
+    欢迎交流合作，随时找我聊聊
+  </p>
+  <div class="contact-links">
+    <a href="mailto:2796442619@qq.com">📧 2796442619@qq.com</a>
+    <a href="https://github.com/Zzc0595" target="_blank">🐱 Zzc0595</a>
+    <a href="#">💬 Zhuangzc0595</a>
+    <a href="#">📱 微博</a>
+  </div>
+</section>
 
-            // ========== 打赏按钮（复制微信收款文本） ==========
-            document.getElementById('donateBtn').addEventListener('click', () => {
-                const payText = '#付款:zzc(Zhuangzc0595)/支持我等收款/001';
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(payText).then(() => {
-                        alert('已复制收款信息到剪贴板！\n请打开微信，在任意聊天框粘贴并发送，\n即可识别并完成付款。');
-                    }).catch(() => {
-                        fallbackCopy(payText);
-                    });
-                } else {
-                    fallbackCopy(payText);
-                }
-                function fallbackCopy(text) {
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    alert('已复制收款信息！\n请打开微信，粘贴到聊天框发送。');
-                }
-            });
+<!-- ========= Footer ========= -->
+<footer>
+  用 <span>♥</span> 打造 &nbsp;·&nbsp; ZZC &nbsp;·&nbsp; 2026
+</footer>
 
-            // ========== DOM元素 ==========
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            const scoreDisplay = document.getElementById('scoreDisplay');
-            const bestScoreDisplay = document.getElementById('bestScoreDisplay');
-            const gameOverOverlay = document.getElementById('gameOverOverlay');
-            const finalScoreEl = document.getElementById('finalScore');
-            const diffBadge = document.getElementById('diffBadge');
-            const btnStart = document.getElementById('btnStart');
-            const btnPause = document.getElementById('btnPause');
-            const btnRestart = document.getElementById('btnRestart');
-            const mobileDpad = document.getElementById('mobileDpad');
+<!-- ========= 粒子动画 ========= -->
+<script>
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let w, h, particles = [];
 
-            // ========== 配置 ==========
-            const GRID_SIZE = 20;
-            const COLS = 22;
-            const ROWS = 22;
-            const CANVAS_W = COLS * GRID_SIZE;
-            const CANVAS_H = ROWS * GRID_SIZE;
+function resize() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
 
-            const difficulties = [
-                { name: '🐢 简单', speed: 130, multiplier: 1 },
-                { name: '⚡ 普通', speed: 85, multiplier: 1.5 },
-                { name: '🔥 困难', speed: 50, multiplier: 2.5 },
-                { name: '💀 地狱', speed: 30, multiplier: 4 },
-            ];
-            let currentDifficultyIndex = 1;
-            let currentDifficulty = difficulties[currentDifficultyIndex];
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * w;
+    this.y = Math.random() * h;
+    this.size = Math.random() * 2.5 + .5;
+    this.speedX = (Math.random() - .5) * .6;
+    this.speedY = (Math.random() - .5) * .6;
+    this.opacity = Math.random() * .5 + .2;
+    this.color = `hsla(${Math.random() * 60 + 220}, 80%, 60%, `;
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    if (this.x < 0 || this.x > w) this.speedX *= -1;
+    if (this.y < 0 || this.y > h) this.speedY *= -1;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color + this.opacity + ')';
+    ctx.fill();
+  }
+}
 
-            // ========== 游戏状态 ==========
-            let snake = [];
-            let food = { x: 0, y: 0, type: 'normal' };
-            let specialFood = null;
-            let specialFoodTimer = 0;
-            let direction = { x: 1, y: 0 };
-            let nextDirection = { x: 1, y: 0 };
-            let score = 0;
-            let bestScore = 0;
-            let gameLoopId = null;
-            let isRunning = false;
-            let isPaused = false;
-            let isGameOver = false;
-            let particles = [];
-            let gridShake = 0;
-            let comboCount = 0;
-            let comboTimer = 0;
-            let easterEggsTriggered = { combo3: false, score100: false, score500: false, diamondFirst: false };
+for (let i = 0; i < 120; i++) particles.push(new Particle());
 
-            canvas.width = CANVAS_W;
-            canvas.height = CANVAS_H;
-            canvas.style.aspectRatio = `${COLS}/${ROWS}`;
+let mouse = { x: null, y: null };
+canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
 
-            // ========== 彩蛋系统 ==========
-            function showEasterEgg(text) {
-                const toast = document.createElement('div');
-                toast.className = 'easter-egg';
-                toast.textContent = text;
-                document.body.appendChild(toast);
-                setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 2600);
-            }
+function animate() {
+  ctx.clearRect(0, 0, w, h);
+  // 连线
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 140) {
+        ctx.strokeStyle = `rgba(79, 172, 254, ${(1 - dist / 140) * .15})`;
+        ctx.lineWidth = .6;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
+      }
+    }
+    // 鼠标连接
+    if (mouse.x !== null) {
+      const dx = particles[i].x - mouse.x;
+      const dy = particles[i].y - mouse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 200) {
+        ctx.strokeStyle = `rgba(240, 147, 251, ${(1 - dist / 200) * .2})`;
+        ctx.lineWidth = .8;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(mouse.x, mouse.y);
+        ctx.stroke();
+      }
+    }
+    particles[i].update();
+    particles[i].draw();
+  }
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
 
-            function checkEasterEggs() {
-                if (comboCount >= 3 && !easterEggsTriggered.combo3) {
-                    easterEggsTriggered.combo3 = true;
-                    showEasterEgg('🔥 zzc 连击彩蛋！');
-                }
-                if (comboCount >= 8) showEasterEgg('💥 超级连击！zzc 都惊呆了');
-                if (score >= 100 && !easterEggsTriggered.score100) {
-                    easterEggsTriggered.score100 = true;
-                    showEasterEgg('🎉 百分配得上 zzc 的才华！');
-                }
-                if (score >= 500 && !easterEggsTriggered.score500) {
-                    easterEggsTriggered.score500 = true;
-                    showEasterEgg('💎 500分！zzc 真厉害！');
-                }
-            }
-
-            // ========== 辅助函数 ==========
-            function triggerScorePop() {
-                scoreDisplay.classList.add('score-pop');
-                setTimeout(() => scoreDisplay.classList.remove('score-pop'), 180);
-            }
-            function spawnParticles(x, y, color, count = 8) {
-                for (let i = 0; i < count; i++) {
-                    const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
-                    const speed = 2 + Math.random() * 5;
-                    particles.push({
-                        x: x * GRID_SIZE + GRID_SIZE / 2,
-                        y: y * GRID_SIZE + GRID_SIZE / 2,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        life: 1, decay: 0.03 + Math.random() * 0.06,
-                        color: color, size: 3 + Math.random() * 5,
-                    });
-                }
-            }
-            function updateParticles() {
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    const p = particles[i];
-                    p.x += p.vx; p.y += p.vy;
-                    p.life -= p.decay;
-                    if (p.life <= 0) particles.splice(i, 1);
-                }
-            }
-            function drawParticles() {
-                for (const p of particles) {
-                    ctx.save();
-                    ctx.globalAlpha = p.life;
-                    ctx.fillStyle = p.color;
-                    ctx.shadowColor = p.color;
-                    ctx.shadowBlur = 10;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.restore();
-                }
-            }
-            function getRandomFoodPosition() {
-                const allPositions = [];
-                for (let x = 0; x < COLS; x++) {
-                    for (let y = 0; y < ROWS; y++) {
-                        const occupied = snake.some(seg => seg.x === x && seg.y === y);
-                        if (!occupied && !(specialFood && specialFood.x === x && specialFood.y === y))
-                            allPositions.push({ x, y });
-                    }
-                }
-                if (allPositions.length === 0) return null;
-                return allPositions[Math.floor(Math.random() * allPositions.length)];
-            }
-            function spawnFood() {
-                const pos = getRandomFoodPosition();
-                if (pos) food = { x: pos.x, y: pos.y, type: Math.random() < 0.1 ? 'bonus' : 'normal' };
-            }
-            function spawnSpecialFood() {
-                if (specialFood) return;
-                const pos = getRandomFoodPosition();
-                if (pos) { specialFood = { x: pos.x, y: pos.y }; specialFoodTimer = 60; }
-            }
-
-            // ========== 核心逻辑 ==========
-            function initGame() {
-                const startX = Math.floor(COLS / 2), startY = Math.floor(ROWS / 2);
-                snake = [{ x: startX, y: startY }, { x: startX - 1, y: startY }, { x: startX - 2, y: startY }];
-                direction = { x: 1, y: 0 }; nextDirection = { x: 1, y: 0 };
-                score = 0; isGameOver = false; isPaused = false;
-                particles = []; specialFood = null; specialFoodTimer = 0;
-                comboCount = 0; comboTimer = 0; gridShake = 0;
-                easterEggsTriggered = { combo3: false, score100: false, score500: false, diamondFirst: false };
-                gameOverOverlay.classList.remove('show');
-                scoreDisplay.textContent = '0';
-                updateBestDisplay();
-                spawnFood();
-                btnPause.textContent = '⏸ 暂停';
-                btnStart.textContent = '🔄 重新开始';
-            }
-            function resetAndStart() {
-                stopGameLoop(); initGame(); isRunning = true; startGameLoop();
-            }
-            function startGameLoop() {
-                stopGameLoop(); gameLoopId = setTimeout(gameTick, currentDifficulty.speed);
-            }
-            function stopGameLoop() {
-                if (gameLoopId) { clearTimeout(gameLoopId); gameLoopId = null; }
-            }
-
-            function gameTick() {
-                if (!isRunning || isPaused || isGameOver) {
-                    if (isRunning && !isPaused && !isGameOver)
-                        gameLoopId = setTimeout(gameTick, currentDifficulty.speed);
-                    return;
-                }
-
-                direction = { ...nextDirection };
-                const head = snake[0];
-                const newHead = { x: head.x + direction.x, y: head.y + direction.y };
-
-                if (newHead.x < 0 || newHead.x >= COLS || newHead.y < 0 || newHead.y >= ROWS) { endGame(); return; }
-
-                const willGrow = (newHead.x === food.x && newHead.y === food.y) ||
-                    (specialFood && newHead.x === specialFood.x && newHead.y === specialFood.y);
-                const checkBody = willGrow ? snake : snake.slice(0, -1);
-                if (checkBody.some(seg => seg.x === newHead.x && seg.y === newHead.y)) { endGame(); return; }
-
-                snake.unshift(newHead);
-                let ate = false;
-
-                if (newHead.x === food.x && newHead.y === food.y) {
-                    ate = true;
-                    const basePoints = food.type === 'bonus' ? 30 : 10;
-                    comboCount++; comboTimer = 30;
-                    const comboBonus = Math.min(comboCount - 1, 10) * 5;
-                    score += Math.round((basePoints + comboBonus) * currentDifficulty.multiplier);
-                    scoreDisplay.textContent = score; triggerScorePop();
-                    spawnParticles(food.x, food.y, food.type === 'bonus' ? '#f5c518' : '#ff5a75', 14);
-                    gridShake = Math.max(gridShake, 3);
-                    spawnFood();
-                    if (score % 50 < (basePoints + comboBonus) && !specialFood && Math.random() < 0.5) spawnSpecialFood();
-                    checkEasterEggs();
-                } else if (specialFood && newHead.x === specialFood.x && newHead.y === specialFood.y) {
-                    ate = true;
-                    const points = Math.round(50 * currentDifficulty.multiplier);
-                    score += points;
-                    scoreDisplay.textContent = score; triggerScorePop();
-                    spawnParticles(specialFood.x, specialFood.y, '#48dbfb', 20);
-                    gridShake = Math.max(gridShake, 6);
-                    specialFood = null; specialFoodTimer = 0;
-                    comboCount += 2; comboTimer = 40;
-                    if (!easterEggsTriggered.diamondFirst) {
-                        easterEggsTriggered.diamondFirst = true;
-                        showEasterEgg('💎 钻石彩蛋！zzc 专属惊喜');
-                    }
-                    checkEasterEggs();
-                } else {
-                    snake.pop();
-                    if (comboTimer > 0) { comboTimer--; if (comboTimer <= 0) comboCount = 0; }
-                }
-
-                if (specialFood) {
-                    specialFoodTimer--;
-                    if (specialFoodTimer <= 0) {
-                        spawnParticles(specialFood.x, specialFood.y, '#888', 6);
-                        specialFood = null;
-                    }
-                }
-
-                updateParticles();
-                if (gridShake > 0) gridShake *= 0.85;
-                if (gridShake < 0.1) gridShake = 0;
-
-                if (score > bestScore) {
-                    bestScore = score;
-                    localStorage.setItem('snakeBestScore', bestScore);
-                    updateBestDisplay();
-                }
-                draw();
-                gameLoopId = setTimeout(gameTick, currentDifficulty.speed);
-            }
-
-            function endGame() {
-                isGameOver = true; isRunning = false; stopGameLoop();
-                if (snake.length > 0) spawnParticles(snake[0].x, snake[0].y, '#fff', 25);
-                gridShake = 8; draw();
-                finalScoreEl.textContent = score;
-                gameOverOverlay.classList.add('show');
-                if (score >= bestScore && score > 0) {
-                    bestScore = score;
-                    localStorage.setItem('snakeBestScore', bestScore);
-                    updateBestDisplay();
-                }
-                btnStart.textContent = '🔄 重新开始';
-                if (score > 300) showEasterEgg('😭 可惜了！但 zzc 依然为你骄傲');
-            }
-
-            function togglePause() {
-                if (!isRunning || isGameOver) return;
-                isPaused = !isPaused;
-                btnPause.textContent = isPaused ? '▶ 继续' : '⏸ 暂停';
-                if (!isPaused) gameLoopId = setTimeout(gameTick, currentDifficulty.speed);
-            }
-
-            // ========== 绘制 ==========
-            function draw() {
-                ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
-                let shakeX = 0, shakeY = 0;
-                if (gridShake > 0.5) {
-                    shakeX = (Math.random() - 0.5) * gridShake * 2;
-                    shakeY = (Math.random() - 0.5) * gridShake * 2;
-                }
-                ctx.save();
-                ctx.translate(shakeX, shakeY);
-                ctx.fillStyle = '#0d1117';
-                ctx.fillRect(-2, -2, CANVAS_W + 4, CANVAS_H + 4);
-
-                ctx.save();
-                ctx.globalAlpha = 0.06;
-                ctx.fillStyle = '#f5c518';
-                ctx.font = 'bold 28px "Segoe UI","PingFang SC"';
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('zzc 制作', CANVAS_W/2, CANVAS_H/2);
-                ctx.fillText('zzc 制作', CANVAS_W/2, CANVAS_H/2 - 60);
-                ctx.fillText('zzc 制作', CANVAS_W/2, CANVAS_H/2 + 60);
-                ctx.restore();
-
-                ctx.strokeStyle = 'rgba(255,255,255,0.03)'; ctx.lineWidth = 0.5;
-                for (let x = 0; x <= COLS; x++) { ctx.beginPath(); ctx.moveTo(x*GRID_SIZE,0); ctx.lineTo(x*GRID_SIZE,CANVAS_H); ctx.stroke(); }
-                for (let y = 0; y <= ROWS; y++) { ctx.beginPath(); ctx.moveTo(0,y*GRID_SIZE); ctx.lineTo(CANVAS_W,y*GRID_SIZE); ctx.stroke(); }
-
-                if (specialFood) {
-                    const alpha = 0.6 + 0.4 * Math.sin(Date.now()/150);
-                    const sx = specialFood.x * GRID_SIZE, sy = specialFood.y * GRID_SIZE;
-                    const gradient = ctx.createRadialGradient(sx+GRID_SIZE/2, sy+GRID_SIZE/2, GRID_SIZE*0.3, sx+GRID_SIZE/2, sy+GRID_SIZE/2, GRID_SIZE*1.4);
-                    gradient.addColorStop(0,'rgba(72,219,251,0.9)'); gradient.addColorStop(0.5,'rgba(72,219,251,0.3)'); gradient.addColorStop(1,'rgba(72,219,251,0)');
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(sx-GRID_SIZE, sy-GRID_SIZE, GRID_SIZE*3, GRID_SIZE*3);
-                    ctx.fillStyle = `rgba(72,219,251,${alpha})`;
-                    ctx.save(); ctx.translate(sx+GRID_SIZE/2, sy+GRID_SIZE/2); ctx.rotate(Math.PI/4);
-                    const d = GRID_SIZE*0.38; ctx.fillRect(-d,-d,d*2,d*2); ctx.restore();
-                    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px "Segoe UI","PingFang SC"'; ctx.textAlign='center'; ctx.textBaseline='middle';
-                    ctx.fillText('💎', sx+GRID_SIZE/2, sy+GRID_SIZE/2);
-                }
-
-                const fx = food.x * GRID_SIZE, fy = food.y * GRID_SIZE;
-                if (food.type === 'bonus') {
-                    const glow = ctx.createRadialGradient(fx+GRID_SIZE/2,fy+GRID_SIZE/2,GRID_SIZE*0.2,fx+GRID_SIZE/2,fy+GRID_SIZE/2,GRID_SIZE*1.2);
-                    glow.addColorStop(0,'rgba(245,197,24,0.8)'); glow.addColorStop(1,'rgba(245,197,24,0)');
-                    ctx.fillStyle = glow; ctx.fillRect(fx-GRID_SIZE*0.6,fy-GRID_SIZE*0.6,GRID_SIZE*2.2,GRID_SIZE*2.2);
-                    ctx.fillStyle = '#f5c518'; ctx.beginPath(); ctx.arc(fx+GRID_SIZE/2,fy+GRID_SIZE/2,GRID_SIZE*0.4,0,Math.PI*2); ctx.fill();
-                    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px "Segoe UI","PingFang SC"'; ctx.textAlign='center'; ctx.textBaseline='middle';
-                    ctx.fillText('⭐', fx+GRID_SIZE/2, fy+GRID_SIZE/2);
-                } else {
-                    const redGlow = ctx.createRadialGradient(fx+GRID_SIZE/2,fy+GRID_SIZE/2,GRID_SIZE*0.1,fx+GRID_SIZE/2,fy+GRID_SIZE/2,GRID_SIZE*1.1);
-                    redGlow.addColorStop(0,'rgba(255,90,117,0.7)'); redGlow.addColorStop(1,'rgba(255,90,117,0)');
-                    ctx.fillStyle = redGlow; ctx.fillRect(fx-GRID_SIZE*0.5,fy-GRID_SIZE*0.5,GRID_SIZE*2,GRID_SIZE*2);
-                    ctx.fillStyle = '#ff5a75'; ctx.beginPath(); ctx.arc(fx+GRID_SIZE/2,fy+GRID_SIZE/2,GRID_SIZE*0.38,0,Math.PI*2); ctx.fill();
-                    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px "Segoe UI","PingFang SC"'; ctx.textAlign='center'; ctx.textBaseline='middle';
-                    ctx.fillText('🍎', fx+GRID_SIZE/2, fy+GRID_SIZE/2);
-                }
-
-                for (let i = snake.length-1; i >= 0; i--) {
-                    const seg = snake[i]; const sx = seg.x*GRID_SIZE, sy = seg.y*GRID_SIZE;
-                    const padding = 1.5; const size = GRID_SIZE - padding*2;
-                    const t = i / Math.max(snake.length-1,1);
-                    const r = Math.round(40 + t*30), g = Math.round(180 + t*40), b = Math.round(100 + t*60);
-                    ctx.fillStyle = `rgba(${r},${g},${b},${1 - t*0.3})`;
-                    if (i===0) { ctx.shadowColor='rgba(100,255,150,0.7)'; ctx.shadowBlur=14; }
-                    else if (i<3) { ctx.shadowColor='rgba(80,200,120,0.3)'; ctx.shadowBlur=4; }
-                    else { ctx.shadowBlur=0; }
-                    ctx.beginPath(); ctx.roundRect(sx+padding, sy+padding, size, size, GRID_SIZE*0.3); ctx.fill();
-                    ctx.shadowBlur=0;
-                    if (i===0) {
-                        const eyeSize = GRID_SIZE*0.15; const cx = sx+GRID_SIZE/2, cy = sy+GRID_SIZE/2;
-                        let e1x,e1y,e2x,e2y;
-                        if (direction.x !== 0) {
-                            const offset = direction.x>0 ? GRID_SIZE*0.55 : GRID_SIZE*0.15;
-                            e1x = cx+offset-GRID_SIZE/2; e1y = cy-GRID_SIZE*0.2;
-                            e2x = cx+offset-GRID_SIZE/2; e2y = cy+GRID_SIZE*0.2;
-                        } else {
-                            const offset = direction.y>0 ? GRID_SIZE*0.55 : GRID_SIZE*0.15;
-                            e1x = cx-GRID_SIZE*0.2; e1y = cy+offset-GRID_SIZE/2;
-                            e2x = cx+GRID_SIZE*0.2; e2y = cy+offset-GRID_SIZE/2;
-                        }
-                        ctx.fillStyle = '#fff';
-                        ctx.beginPath(); ctx.arc(e1x,e1y,eyeSize,0,Math.PI*2); ctx.fill();
-                        ctx.beginPath(); ctx.arc(e2x,e2y,eyeSize,0,Math.PI*2); ctx.fill();
-                        ctx.fillStyle = '#111';
-                        ctx.beginPath(); ctx.arc(e1x,e1y,eyeSize*0.5,0,Math.PI*2); ctx.fill();
-                        ctx.beginPath(); ctx.arc(e2x,e2y,eyeSize*0.5,0,Math.PI*2); ctx.fill();
-                    }
-                }
-                drawParticles();
-                ctx.restore();
-                if (comboCount>=3 && comboTimer>0 && isRunning && !isGameOver) {
-                    const alpha = Math.min(1, comboTimer/15);
-                    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-                    ctx.font = 'bold 16px "Segoe UI","PingFang SC"'; ctx.textAlign='center';
-                    ctx.fillText(`🔥 ${comboCount}连击!`, CANVAS_W/2, CANVAS_H-10);
-                }
-            }
-
-            // ========== 事件处理 ==========
-            function changeDirection(dx, dy) {
-                if (!isRunning || isPaused || isGameOver) return;
-                if (dx === -direction.x && dy === -direction.y && snake.length > 1) return;
-                if (dx === direction.x && dy === direction.y) return;
-                nextDirection = { x: dx, y: dy };
-            }
-
-            document.addEventListener('keydown', (e) => {
-                if (isGameOver) return;
-                const key = e.key.toLowerCase();
-                if (['arrowup','w'].includes(key)) { e.preventDefault(); changeDirection(0,-1); }
-                else if (['arrowdown','s'].includes(key)) { e.preventDefault(); changeDirection(0,1); }
-                else if (['arrowleft','a'].includes(key)) { e.preventDefault(); changeDirection(-1,0); }
-                else if (['arrowright','d'].includes(key)) { e.preventDefault(); changeDirection(1,0); }
-                else if (key === ' ' || key === 'p') {
-                    e.preventDefault();
-                    if (isRunning && !isGameOver) togglePause();
-                    else if (!isRunning || isGameOver) resetAndStart();
-                }
-            });
-
-            mobileDpad.querySelectorAll('.dpad-btn').forEach(btn => {
-                btn.addEventListener('pointerdown', (e) => {
-                    e.preventDefault();
-                    const dir = btn.dataset.dir;
-                    if (dir === 'up') changeDirection(0,-1);
-                    else if (dir === 'down') changeDirection(0,1);
-                    else if (dir === 'left') changeDirection(-1,0);
-                    else if (dir === 'right') changeDirection(1,0);
-                });
-            });
-
-            let touchStartX=0, touchStartY=0;
-            canvas.addEventListener('touchstart', (e) => {
-                if (e.touches.length===1) { touchStartX=e.touches[0].clientX; touchStartY=e.touches[0].clientY; }
-            }, {passive:true});
-            canvas.addEventListener('touchend', (e) => {
-                if (!isRunning || isPaused || isGameOver) return;
-                const endX = e.changedTouches[0]?.clientX ?? touchStartX;
-                const endY = e.changedTouches[0]?.clientY ?? touchStartY;
-                const dx = endX - touchStartX, dy = endY - touchStartY;
-                const threshold = 25;
-                if (Math.abs(dx)<threshold && Math.abs(dy)<threshold) return;
-                if (Math.abs(dx) > Math.abs(dy)) changeDirection(dx>0?1:-1, 0);
-                else changeDirection(0, dy>0?1:-1);
-            });
-
-            btnStart.addEventListener('click', resetAndStart);
-            btnPause.addEventListener('click', () => { if (isRunning && !isGameOver) togglePause(); });
-            btnRestart.addEventListener('click', resetAndStart);
-
-            diffBadge.addEventListener('click', () => {
-                currentDifficultyIndex = (currentDifficultyIndex + 1) % difficulties.length;
-                currentDifficulty = difficulties[currentDifficultyIndex];
-                diffBadge.textContent = currentDifficulty.name;
-                if (isRunning && !isGameOver && !isPaused) { stopGameLoop(); startGameLoop(); }
-            });
-
-            function updateBestDisplay() { bestScoreDisplay.textContent = bestScore; }
-            function loadBestScore() {
-                try {
-                    const saved = localStorage.getItem('snakeBestScore');
-                    bestScore = saved ? parseInt(saved,10)||0 : 0;
-                } catch(e) { bestScore=0; }
-                updateBestDisplay();
-            }
-        })();
-    </script>
 </body>
 </html>
