@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Chat</title>
+<style>
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root[data-theme="dark"] {
+  --bg-primary: #212121;
+  --bg-secondary: #171717;
+  --bg-hover: #2f2f2f;
+  --text-primary: #e5e5e5;
+  --text-secondary: #a0a0a0;
+  --text-muted: #6b6b6b;
+  --border-color: #424242;
+  --bubble-user: #2b5278;
+  --bubble-ai: #2f2f2f;
+  --accent: #4f9cf7;
+  --accent-hover: #3b82d6;
+  --input-bg: #2f2f2f;
+  --shadow: 0 0 20px rgba(0,0,0,0.3);
+  --danger: #ef4444;
+}
+
+:root[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-hover: #e9e9e9;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border-color: #e0e0e0;
+  --bubble-user: #dbeafe;
+  --bubble-ai: #f5f5f5;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --input-bg: #ffffff;
+  --shadow: 0 0 20px rgba(0,0,0,0.08);
+  --danger: #dc2626;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 32px;
+  height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* API Key Bar */
+.api-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.api-bar .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.api-bar .status-dot.offline { background: var(--danger); }
+.api-bar .status-dot.online { background: #22c55e; }
+
+.api-bar .key-input-wrap {
+  display: flex;
+  flex: 1;
+  max-width: 400px;
+}
+
+.api-bar input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 4px 10px;
+  border-radius: 6px 0 0 6px;
+  font-size: 13px;
+  outline: none;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.api-bar input:focus {
+  border-color: var(--accent);
+}
+
+.api-bar .save-btn {
+  padding: 4px 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.api-bar .save-btn:hover { background: var(--accent-hover); }
+
+.api-bar .status-text {
+  color: var(--text-muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Messages */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+.messages:empty::after {
+  content: '有什么可以帮你的？';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+.message {
+  display: flex;
+  gap: 12px;
+  max-width: 85%;
+  animation: msgIn 0.3s ease;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message.user { align-self: flex-end; flex-direction: row-reverse; }
+.message.assistant { align-self: flex-start; }
+
+.message .avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.message.user .avatar {
+  background: var(--accent);
+  color: #fff;
+}
+
+.message.assistant .avatar {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.message .content {
+  padding: 10px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  word-break: break-word;
+  position: relative;
+}
+
+.message.user .content {
+  background: var(--bubble-user);
+  color: var(--text-primary);
+  border-bottom-right-radius: 4px;
+}
+
+.message.assistant .content {
+  background: var(--bubble-ai);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 4px;
+}
+
+/* Markdown within messages */
+.message .content p { margin-bottom: 8px; }
+.message .content p:last-child { margin-bottom: 0; }
+.message .content ul, .message .content ol { padding-left: 20px; margin-bottom: 8px; }
+.message .content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+  color: var(--text-secondary);
+  margin: 8px 0;
+}
+.message .content a { color: var(--accent); text-decoration: none; }
+.message .content a:hover { text-decoration: underline; }
+.message .content h1, .message .content h2, .message .content h3,
+.message .content h4 { margin: 12px 0 6px; }
+.message .content h1 { font-size: 18px; }
+.message .content h2 { font-size: 16px; }
+.message .content h3 { font-size: 15px; }
+.message .content code {
+  background: rgba(0,0,0,0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.message .content pre {
+  margin: 8px 0;
+  border-radius: 8px;
+  overflow-x: auto;
+  position: relative;
+}
+.message .content pre code {
+  background: none;
+  padding: 0;
+  font-size: 13px;
+}
+.message .content table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  width: 100%;
+  font-size: 13px;
+}
+.message .content th, .message .content td {
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  text-align: left;
+}
+.message .content th {
+  background: var(--bg-hover);
+  font-weight: 600;
+}
+.message .content hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 12px 0;
+}
+
+/* Copy button on code blocks */
+.message .content pre .copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.message .content pre:hover .copy-btn { opacity: 1; }
+.message .content pre .copy-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* Typing indicator */
+.typing .content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 20px;
+}
+.typing .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out;
+}
+.typing .dot:nth-child(1) { animation-delay: 0s; }
+.typing .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* Error message */
+.message.error .content {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Input area */
+.input-area {
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.input-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 8px 12px;
+  transition: border-color 0.2s;
+}
+
+.input-wrap:focus-within {
+  border-color: var(--accent);
+}
+
+.input-wrap textarea {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+  max-height: 200px;
+  font-family: inherit;
+  min-height: 24px;
+}
+
+.input-wrap textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.send-btn:hover:not(:disabled) { background: var(--accent-hover); }
+.send-btn:active:not(:disabled) { transform: scale(0.9); }
+.send-btn:disabled {
+  background: var(--border-color);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Scrollbar */
+.messages::-webkit-scrollbar { width: 6px; }
+.messages::-webkit-scrollbar-track { background: transparent; }
+.messages::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+.messages::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Code highlight overrides */
+.hljs {
+  background: rgba(0,0,0,0.2) !important;
+  border-radius: 8px;
+  padding: 14px 16px !important;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Model selector */
+.model-select {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+.model-select:focus {
+  border-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .header { padding: 12px 16px; }
+  .api-bar { padding: 8px 16px; flex-wrap: wrap; }
+  .api-bar .status-text { margin-left: 0; width: 100%; text-align: right; }
+  .api-bar .key-input-wrap { max-width: 100%; }
+  .messages { padding: 16px; }
+  .message { max-width: 92%; }
+  .input-area { padding: 12px 16px 16px; }
+  .header h1 { font-size: 16px; }
+}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" crossorigin="anonymous">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">DS</div>
+      <h1>DeepSeek Chat</h1>
+    </div>
+    <div class="header-right">
+      <select class="model-select" id="modelSelect">
+        <option value="deepseek-chat">deepseek-chat</option>
+        <option value="deepseek-reasoner">deepseek-reasoner</option>
+      </select>
+      <button class="icon-btn" id="clearBtn" title="清空对话">&#x1f5d1;</button>
+      <button class="icon-btn" id="themeBtn" title="切换主题">&#x263c;</button>
+    </div>
+  </div>
+
+  <!-- API Key Bar -->
+  <div class="api-bar">
+    <span class="status-dot offline" id="statusDot"></span>
+    <div class="key-input-wrap">
+      <input type="password" id="apiKeyInput" placeholder="输入 DeepSeek API Key..." spellcheck="false">
+      <button class="save-btn" id="saveKeyBtn">保存</button>
+    </div>
+    <select class="model-select" id="endpointSelect">
+      <option value="https://api.deepseek.com">api.deepseek.com</option>
+      <option value="https://api.deepseek.com/v1">api.deepseek.com/v1</option>
+    </select>
+    <span class="status-text" id="statusText">未配置 API Key</span>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages" id="messages"></div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <div class="input-wrap">
+      <textarea id="userInput" rows="1" placeholder="输入消息，Enter 发送，Shift+Enter 换行"></textarea>
+      <button class="send-btn" id="sendBtn">&#x27a4;</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" crossorigin="anonymous"></script>
+<script>
+(function() {
+
+// ---- State ----
+let apiKey = localStorage.getItem('deepseek_api_key') || '';
+let messages = [];
+let isStreaming = false;
+
+// ---- DOM refs ----
+const messagesEl = document.getElementById('messages');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const saveKeyBtn = document.getElementById('saveKeyBtn');
+const clearBtn = document.getElementById('clearBtn');
+const themeBtn = document.getElementById('themeBtn');
+const modelSelect = document.getElementById('modelSelect');
+const endpointSelect = document.getElementById('endpointSelect');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const toast = document.getElementById('toast');
+
+// ---- API base URL ----
+function getApiBase() {
+  let ep = endpointSelect.value;
+  if (!ep.endsWith('/v1')) ep += '/v1';
+  return ep;
+}
+
+// ---- Toast ----
+let toastTimer;
+function showToast(msg) {
+  clearTimeout(toastTimer);
+  toast.textContent = msg;
+  toast.classList.add('show');
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ---- Theme ----
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('deepseek_theme', theme);
+  themeBtn.textContent = theme === 'dark' ? '\u263c' : '\u263e';
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  setTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
+const savedTheme = localStorage.getItem('deepseek_theme') || 'dark';
+setTheme(savedTheme);
+
+// ---- API Key ----
+if (apiKey) {
+  apiKeyInput.value = apiKey;
+  updateKeyStatus(true);
+}
+
+function updateKeyStatus(hasKey) {
+  if (hasKey) {
+    statusDot.className = 'status-dot online';
+    statusText.textContent = 'API Key 已配置';
+  } else {
+    statusDot.className = 'status-dot offline';
+    statusText.textContent = '未配置 API Key';
+  }
+}
+
+saveKeyBtn.addEventListener('click', () => {
+  const val = apiKeyInput.value.trim();
+  if (!val) {
+    showToast('请输入 API Key');
+    return;
+  }
+  apiKey = val;
+  localStorage.setItem('deepseek_api_key', val);
+  updateKeyStatus(true);
+  showToast('API Key 已保存');
+});
+
+// ---- Messages rendering ----
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function renderMessage(msg) {
+  const div = document.createElement('div');
+  div.className = `message ${msg.role}`;
+  if (msg.role === 'error') div.className = 'message assistant error';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = msg.role === 'user' ? 'U' : 'DS';
+
+  const content = document.createElement('div');
+  content.className = 'content';
+
+  if (msg.role === 'typing') {
+    div.classList.add('typing');
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      content.appendChild(dot);
+    }
+  } else {
+    content.innerHTML = msg.html || escapeHtml(msg.content);
+    // Highlight code blocks
+    content.querySelectorAll('pre code').forEach(block => {
+      hljs.highlightElement(block);
+      // add copy button
+      const pre = block.parentElement;
+      if (!pre.querySelector('.copy-btn')) {
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = '\u2398 复制';
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(block.textContent).then(() => {
+            btn.textContent = '\u2713 已复制';
+            setTimeout(() => { btn.textContent = '\u2398 复制'; }, 2000);
+          });
+        });
+        pre.appendChild(btn);
+      }
+    });
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(content);
+
+  // Scroll into view
+  setTimeout(() => div.scrollIntoView({ behavior: 'smooth', block: 'end' }), 50);
+
+  return div;
+}
+
+// ---- Simple markdown to HTML ----
+function mdToHtml(text) {
+  let html = text;
+
+  // code blocks (```) - must be before inline code
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const langClass = lang ? ` class="language-${escapeHtml(lang)}"` : '';
+    return `<pre><code${langClass}>${escapeHtml(code.trim())}</code></pre>`;
+  });
+
+  // inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // images
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" style="max-width:100%;border-radius:8px">');
+
+  // links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+  // bold & italic
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // strikethrough
+  html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+
+  // horizontal rule
+  html = html.replace(/^---$/gm, '<hr>');
+
+  // headings
+  html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+  // blockquote
+  html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // unordered list
+  html = html.replace(/^[\s]*[-*+] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+  // ordered list
+  html = html.replace(/^[\s]*\d+\. (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(?:^|\n)(<li>.*<\/li>\n?)+/g, (m) => m.includes('<ol>') ? m : '<ol>' + m + '</ol>');
+
+  // fix nested lists
+  html = html.replace(/<\/ul>\n?<ul>/g, '');
+  html = html.replace(/<\/ol>\n?<ol>/g, '');
+
+  // tables
+  html = html.replace(/^\|(.+)\|$/gm, (line) => {
+    const cells = line.slice(1, -1).split('|').map(c => c.trim());
+    if (cells.every(c => /^[-:\s]+$/.test(c))) return '<tr class="sep">';
+    return '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+  });
+  html = html.replace(/(<tr>.*<\/tr>\n?)+/g, '<table>$&</table>');
+  html = html.replace(/<tr class="sep">/g, '');
+
+  // paragraphs - wrap remaining text
+  const lines = html.split('\n');
+  let result = '';
+  let inBlock = false;
+  for (let line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) { result += '\n'; continue; }
+    if (/^<(h[1-4]|ul|ol|li|table|tr|td|th|pre|code|blockquote|hr|img|div)/.test(trimmed) || trimmed.startsWith('<')) {
+      result += trimmed + '\n';
+      inBlock = true;
+    } else {
+      result += `<p>${trimmed}</p>\n`;
+    }
+  }
+
+  return result.trim();
+}
+
+// ---- API call ----
+async function callDeepSeek(userMessage) {
+  const key = apiKey;
+  if (!key) {
+    showToast('请先配置 API Key');
+    return;
+  }
+
+  const model = modelSelect.value;
+
+  messages.push({ role: 'user', content: userMessage });
+
+  // render user message
+  const userHtml = mdToHtml(userMessage);
+  const userMsgEl = renderMessage({ role: 'user', html: userHtml });
+  messagesEl.appendChild(userMsgEl);
+
+  // render typing indicator
+  const typingEl = renderMessage({ role: 'typing' });
+  messagesEl.appendChild(typingEl);
+
+  isStreaming = true;
+  sendBtn.disabled = true;
+  userInput.disabled = true;
+
+  const systemMsg = 'You are DeepSeek, a helpful AI assistant. Answer in Chinese unless the user asks otherwise.';
+
+  try {
+    const resp = await fetch(`${getApiBase()}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemMsg },
+          ...messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
+        ],
+        stream: true,
+        max_tokens: 4096
+      })
+    });
+
+    if (!resp.ok) {
+      let errMsg = `请求失败 (${resp.status})`;
+      try {
+        const err = await resp.json();
+        errMsg = err.error?.message || errMsg;
+      } catch {}
+      throw new Error(errMsg);
+    }
+
+    // Remove typing indicator
+    typingEl.remove();
+
+    // Render AI message placeholder
+    let fullContent = '';
+    const aiHtmlEl = renderMessage({ role: 'assistant', html: '' });
+    messagesEl.appendChild(aiHtmlEl);
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data: ')) continue;
+        const data = trimmed.slice(6);
+        if (data === '[DONE]') continue;
+
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            fullContent += delta;
+          }
+        } catch {}
+      }
+
+      // Update rendered content
+      const contentEl = aiHtmlEl.querySelector('.content');
+      if (contentEl && fullContent) {
+        contentEl.innerHTML = mdToHtml(fullContent);
+        contentEl.querySelectorAll('pre code').forEach(block => {
+          hljs.highlightElement(block);
+          const pre = block.parentElement;
+          if (!pre.querySelector('.copy-btn')) {
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.textContent = '\u2398 复制';
+            btn.addEventListener('click', () => {
+              navigator.clipboard.writeText(block.textContent).then(() => {
+                btn.textContent = '\u2713 已复制';
+                setTimeout(() => { btn.textContent = '\u2398 复制'; }, 2000);
+              });
+            });
+            pre.appendChild(btn);
+          }
+        });
+      }
+    }
+
+    // Final parse of any remaining buffer
+    if (buffer.trim().startsWith('data: ')) {
+      const data = buffer.trim().slice(6);
+      if (data !== '[DONE]') {
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta?.content || '';
+          if (delta) fullContent += delta;
+        } catch {}
+      }
+    }
+
+    // Update final content
+    const contentEl = aiHtmlEl.querySelector('.content');
+    if (contentEl && fullContent) {
+      contentEl.innerHTML = mdToHtml(fullContent);
+      contentEl.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+        const pre = block.parentElement;
+        if (!pre.querySelector('.copy-btn')) {
+          const btn = document.createElement('button');
+          btn.className = 'copy-btn';
+          btn.textContent = '\u2398 复制';
+          btn.addEventListener('click', () => {
+            navigator.clipboard.writeText(block.textContent).then(() => {
+              btn.textContent = '\u2713 已复制';
+              setTimeout(() => { btn.textContent = '\u2398 复制'; }, 2000);
+            });
+          });
+          pre.appendChild(btn);
+        }
+      });
+    }
+
+    messages.push({ role: 'assistant', content: fullContent });
+
+  } catch (err) {
+    // Remove typing
+    typingEl.remove();
+    const errMsg = err.message || '未知错误';
+    const errEl = renderMessage({ role: 'error', html: `<strong>出错了</strong><br>${escapeHtml(errMsg)}` });
+    messagesEl.appendChild(errEl);
+    messages.pop(); // remove user message on error
+  }
+
+  isStreaming = false;
+  sendBtn.disabled = false;
+  userInput.disabled = false;
+  userInput.focus();
+}
+
+// ---- Send message ----
+function sendMessage() {
+  if (isStreaming) return;
+  const text = userInput.value.trim();
+  if (!text) return;
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  callDeepSeek(text);
+}
+
+// ---- Auto-resize textarea ----
+userInput.addEventListener('input', () => {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
+});
+
+userInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+sendBtn.addEventListener('click', sendMessage);
+
+// ---- Clear ----
+clearBtn.addEventListener('click', () => {
+  if (!messagesEl.children.length) return;
+  if (!confirm('确定清空对话？')) return;
+  messagesEl.innerHTML = '';
+  messages = [];
+  userInput.focus();
+});
+
+// ---- Theme toggle ----
+themeBtn.addEventListener('click', toggleTheme);
+
+// ---- Init ----
+apiKeyInput.focus();
+
+// ---- Load saved messages from sessionStorage? No, skip ----
+
+})();
+</script>
+</body>
+</html>
