@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Agent v2</title>
+<style>
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root[data-theme="dark"] {
+  --bg-primary: #212121;
+  --bg-secondary: #171717;
+  --bg-hover: #2f2f2f;
+  --text-primary: #e5e5e5;
+  --text-secondary: #a0a0a0;
+  --text-muted: #6b6b6b;
+  --border-color: #424242;
+  --bubble-user: #2b5278;
+  --bubble-ai: #2f2f2f;
+  --bubble-tool: #1e3a2f;
+  --accent: #4f9cf7;
+  --accent-hover: #3b82d6;
+  --input-bg: #2f2f2f;
+  --shadow: 0 0 20px rgba(0,0,0,0.3);
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #eab308;
+}
+
+:root[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-hover: #e9e9e9;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border-color: #e0e0e0;
+  --bubble-user: #dbeafe;
+  --bubble-ai: #f5f5f5;
+  --bubble-tool: #dcfce7;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --input-bg: #ffffff;
+  --shadow: 0 0 20px rgba(0,0,0,0.08);
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #ca8a04;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 960px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 30px;
+  height: 30px;
+  background: var(--accent);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+}
+
+.header h1 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* API Key Bar */
+.api-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.api-bar .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.api-bar .status-dot.offline { background: var(--danger); }
+.api-bar .status-dot.online { background: var(--success); }
+
+.api-bar .key-input-wrap {
+  display: flex;
+  flex: 1;
+  min-width: 200px;
+  max-width: 340px;
+}
+
+.api-bar input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: 5px 0 0 5px;
+  font-size: 12px;
+  outline: none;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.api-bar input:focus { border-color: var(--accent); }
+
+.api-bar .save-btn {
+  padding: 4px 10px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 0 5px 5px 0;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.api-bar .save-btn:hover { background: var(--accent-hover); }
+
+.api-bar .status-text {
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Model / Tools bar */
+.control-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.control-bar .label {
+  color: var(--text-muted);
+  margin-right: 2px;
+}
+
+.control-bar select {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+.control-bar select:focus { border-color: var(--accent); }
+
+.control-bar .tool-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  user-select: none;
+}
+.control-bar .tool-toggle:hover { background: var(--bg-hover); }
+.control-bar .tool-toggle.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(79, 156, 247, 0.1);
+}
+
+.control-bar .turn-counter {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* Messages */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+
+.messages:empty::after {
+  content: 'Agent v2: 我可以搜索、抓取网页、计算、写代码(远程执行)、读写文件、操作剪贴板。开始吧！';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 0 40px;
+}
+
+.message {
+  display: flex;
+  gap: 10px;
+  max-width: 88%;
+  animation: msgIn 0.3s ease;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message.user { align-self: flex-end; flex-direction: row-reverse; }
+.message.assistant { align-self: flex-start; }
+.message.tool-call { align-self: flex-start; max-width: 95%; }
+.message.tool-result { align-self: flex-start; max-width: 95%; }
+
+.message .avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.message.user .avatar { background: var(--accent); color: #fff; }
+.message.assistant .avatar { background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border-color); }
+.message.tool-call .avatar { background: var(--warning); color: #000; font-size: 14px; }
+.message.tool-result .avatar { background: var(--success); color: #fff; font-size: 14px; }
+
+.message .content {
+  padding: 9px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+  position: relative;
+  min-width: 0;
+}
+
+.message.user .content {
+  background: var(--bubble-user);
+  color: var(--text-primary);
+  border-bottom-right-radius: 4px;
+}
+
+.message.assistant .content {
+  background: var(--bubble-ai);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 4px;
+}
+
+.message.tool-call .content {
+  background: var(--bubble-tool);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+}
+
+.message.tool-result .content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 4px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  max-height: 300px;
+  overflow: hidden;
+  position: relative;
+}
+.message.tool-result .content.expanded {
+  max-height: none;
+}
+.message.tool-result .expand-btn {
+  display: block;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 0;
+  margin-top: 4px;
+}
+.message.tool-result .expand-btn:hover { text-decoration: underline; }
+
+.message.tool-call .tool-name {
+  font-weight: 600;
+  color: var(--warning);
+}
+.message.tool-call .tool-args {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.7;
+  word-break: break-all;
+}
+
+/* Markdown within messages */
+.message .content p { margin-bottom: 6px; }
+.message .content p:last-child { margin-bottom: 0; }
+.message .content ul, .message .content ol { padding-left: 18px; margin-bottom: 6px; }
+.message .content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+  color: var(--text-secondary);
+  margin: 6px 0;
+}
+.message .content a { color: var(--accent); text-decoration: none; }
+.message .content a:hover { text-decoration: underline; }
+.message .content h1, .message .content h2, .message .content h3,
+.message .content h4 { margin: 10px 0 5px; }
+.message .content h1 { font-size: 17px; }
+.message .content h2 { font-size: 15px; }
+.message .content h3 { font-size: 14px; }
+.message .content h4 { font-size: 13px; }
+.message .content code {
+  background: rgba(0,0,0,0.15);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.message .content pre {
+  margin: 6px 0;
+  border-radius: 7px;
+  overflow-x: auto;
+  position: relative;
+}
+.message .content pre code {
+  background: none;
+  padding: 0;
+  font-size: 13px;
+}
+.message .content table {
+  border-collapse: collapse;
+  margin: 6px 0;
+  width: 100%;
+  font-size: 13px;
+}
+.message .content th, .message .content td {
+  border: 1px solid var(--border-color);
+  padding: 5px 8px;
+  text-align: left;
+}
+.message .content th {
+  background: var(--bg-hover);
+  font-weight: 600;
+}
+.message .content hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 10px 0;
+}
+
+/* Copy button */
+.message .content pre .copy-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-secondary);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.message .content pre:hover .copy-btn { opacity: 1; }
+.message .content pre .copy-btn:hover { background: rgba(255,255,255,0.18); }
+
+/* Typing indicator */
+.typing .content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 18px;
+}
+.typing .dot {
+  width: 7px;
+  height: 7px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out;
+}
+.typing .dot:nth-child(1) { animation-delay: 0s; }
+.typing .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* Error message */
+.message.error .content {
+  border-color: var(--danger) !important;
+  color: var(--danger);
+}
+
+/* Input area */
+.input-area {
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.input-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 11px;
+  padding: 7px 11px;
+  transition: border-color 0.2s;
+}
+
+.input-wrap:focus-within {
+  border-color: var(--accent);
+}
+
+.input-wrap textarea {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+  max-height: 180px;
+  font-family: inherit;
+  min-height: 24px;
+}
+
+.input-wrap textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.send-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.send-btn:hover:not(:disabled) { background: var(--accent-hover); }
+.send-btn:active:not(:disabled) { transform: scale(0.9); }
+.send-btn:disabled {
+  background: var(--border-color);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Scrollbar */
+.messages::-webkit-scrollbar { width: 5px; }
+.messages::-webkit-scrollbar-track { background: transparent; }
+.messages::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+.messages::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Code highlight overrides */
+.hljs {
+  background: rgba(0,0,0,0.2) !important;
+  border-radius: 7px;
+  padding: 12px 14px !important;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 7px 18px;
+  border-radius: 7px;
+  font-size: 13px;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 640px) {
+  .header { padding: 10px 14px; }
+  .api-bar { padding: 6px 14px; }
+  .control-bar { padding: 6px 14px; }
+  .api-bar .key-input-wrap { min-width: 140px; }
+  .messages { padding: 14px; }
+  .message { max-width: 95%; }
+  .input-area { padding: 10px 14px 14px; }
+  .header h1 { font-size: 14px; }
+  .control-bar .tool-toggle { font-size: 10px; padding: 2px 6px; }
+}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" crossorigin="anonymous">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">&#x2699;</div>
+      <h1>DeepSeek Agent</h1>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="clearBtn" title="清空对话">&#x1f5d1;</button>
+      <button class="icon-btn" id="themeBtn" title="切换主题">&#x263c;</button>
+    </div>
+  </div>
+
+  <!-- API Key Bar -->
+  <div class="api-bar">
+    <span class="status-dot offline" id="statusDot"></span>
+    <div class="key-input-wrap">
+      <input type="password" id="apiKeyInput" placeholder="输入 DeepSeek API Key..." spellcheck="false">
+      <button class="save-btn" id="saveKeyBtn">保存</button>
+    </div>
+    <span class="status-text" id="statusText">未配置 API Key</span>
+  </div>
+
+  <!-- Control Bar -->
+  <div class="control-bar">
+    <span class="label">模型:</span>
+    <select id="modelSelect">
+      <option value="deepseek-chat">deepseek-chat</option>
+      <option value="deepseek-reasoner">deepseek-reasoner</option>
+    </select>
+    <span class="label" style="margin-left:8px;">工具:</span>
+    <span class="tool-toggle active" data-tool="web_search">&#x1f50d; 搜索</span>
+    <span class="tool-toggle active" data-tool="fetch_url">&#x1f310; 抓取</span>
+    <span class="tool-toggle active" data-tool="calculator">&#x1f522; 计算</span>
+    <span class="tool-toggle active" data-tool="run_code">&#x1f4bb; 代码</span>
+    <span class="tool-toggle active" data-tool="run_javascript">JS</span>
+    <span class="tool-toggle active" data-tool="read_files">&#x1f4c2; 文件</span>
+    <span class="tool-toggle active" data-tool="clipboard_operate">&#x1f4cb; 剪贴板</span>
+    <span class="turn-counter" id="turnCounter"></span>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages" id="messages"></div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <div class="input-wrap">
+      <textarea id="userInput" rows="1" placeholder="输入任务，例如: 用Python写一个排序算法并运行它"></textarea>
+      <button class="send-btn" id="sendBtn">&#x27a4;</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" crossorigin="anonymous"></script>
+<script>
+(function() {
+
+// ==============================
+//  1. STATE
+// ==============================
+let apiKey = localStorage.getItem('deepseek_api_key') || '';
+let messages = [];
+let isRunning = false;
+let agentLoopAborted = false;
+let lastUserMsg = '';
+
+// ==============================
+//  2. DOM REFS
+// ==============================
+const messagesEl = document.getElementById('messages');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const saveKeyBtn = document.getElementById('saveKeyBtn');
+const clearBtn = document.getElementById('clearBtn');
+const themeBtn = document.getElementById('themeBtn');
+const modelSelect = document.getElementById('modelSelect');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const toast = document.getElementById('toast');
+const turnCounter = document.getElementById('turnCounter');
+const toolToggles = document.querySelectorAll('.tool-toggle');
+
+// ==============================
+//  3. TOOL DEFINITIONS
+// ==============================
+const TOOL_DEFS = [
+  {
+    type: 'function',
+    function: {
+      name: 'web_search',
+      description: '搜索互联网。当你需要实时信息、最新新闻或不确定的知识时使用。',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: '搜索关键词' }
+        },
+        required: ['query']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'fetch_url',
+      description: '获取一个网页的内容。可以读取网页、API接口等。',
+      parameters: {
+        type: 'object',
+        properties: {
+          url: { type: 'string', description: '完整的 URL，包含 http:// 或 https://' }
+        },
+        required: ['url']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'calculator',
+      description: '执行数学计算。支持 + - * / ** % 和 Math.* 函数。',
+      parameters: {
+        type: 'object',
+        properties: {
+          expression: { type: 'string', description: '数学表达式，例如 "2 ** 10" 或 "Math.sqrt(144)"' }
+        },
+        required: ['expression']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'run_code',
+      description: '在远程沙箱中执行代码。支持 Python、JavaScript、Go、Rust、Java、C++、Bash、Ruby、TypeScript 等 40+ 语言。当用户需要运行代码、写脚本、编译程序时使用。',
+      parameters: {
+        type: 'object',
+        properties: {
+          language: {
+            type: 'string',
+            description: '编程语言，如 python, javascript, go, rust, java, cpp, bash, ruby, typescript, r, swift, php, perl, lua, haskell 等'
+          },
+          code: { type: 'string', description: '要执行的源代码' },
+          stdin: { type: 'string', description: '标准输入 (可选)' }
+        },
+        required: ['language', 'code']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'run_javascript',
+      description: '在浏览器沙箱中执行 JavaScript 代码。运行速度最快，无需网络。可以操作当前页面 DOM。适用于简单的 JS 逻辑、数据处理。',
+      parameters: {
+        type: 'object',
+        properties: {
+          code: { type: 'string', description: '要执行的 JavaScript 代码' }
+        },
+        required: ['code']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'current_datetime',
+      description: '获取当前的日期和时间信息。',
+      parameters: {
+        type: 'object',
+        properties: {
+          format: {
+            type: 'string',
+            enum: ['full', 'date', 'time', 'iso'],
+            description: 'full: 完整日期时间, date: 仅日期, time: 仅时间, iso: ISO 格式'
+          }
+        },
+        required: ['format']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'read_files',
+      description: '读取本地文件。浏览器会弹出文件选择器让用户选取文件。用于读取配置文件、代码文件、文档等。',
+      parameters: {
+        type: 'object',
+        properties: {
+          multiple: {
+            type: 'boolean',
+            description: '是否允许选择多个文件 (true/false)'
+          }
+        },
+        required: ['multiple']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'write_file',
+      description: '写入内容到本地文件。浏览器会弹出保存对话框让用户选择保存位置。用于保存生成的代码、报告、下载内容等。',
+      parameters: {
+        type: 'object',
+        properties: {
+          suggestedName: { type: 'string', description: '建议的文件名 (可选)' },
+          content: { type: 'string', description: '要写入的文件内容' }
+        },
+        required: ['content']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'explore_directory',
+      description: '浏览一个本地目录的内容。浏览器会弹出文件夹选择器让用户选取目录。用于查看项目结构、列出文件清单。',
+      parameters: {
+        type: 'object',
+        properties: {
+          recursive: {
+            type: 'boolean',
+            description: '是否递归列出所有子目录文件 (true/false)'
+          }
+        },
+        required: ['recursive']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'clipboard_operate',
+      description: '操作剪贴板。可以读取或写入剪贴板内容。',
+      parameters: {
+        type: 'object',
+        properties: {
+          action: {
+            type: 'string',
+            enum: ['read', 'write'],
+            description: 'read: 读取剪贴板内容, write: 写入内容到剪贴板'
+          },
+          text: {
+            type: 'string',
+            description: '当 action 为 write 时，要写入的内容'
+          }
+        },
+        required: ['action']
+      }
+    }
+  }
+];
+
+// ==============================
+//  4. UTILITIES
+// ==============================
+let toastTimer;
+function showToast(msg) {
+  clearTimeout(toastTimer);
+  toast.textContent = msg;
+  toast.classList.add('show');
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function getActiveTools() {
+  const names = [];
+  toolToggles.forEach(el => {
+    if (el.classList.contains('active')) names.push(el.dataset.tool);
+  });
+  return TOOL_DEFS.filter(t => names.includes(t.function.name));
+}
+
+// ==============================
+//  5. THEME
+// ==============================
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('deepseek_theme', theme);
+  themeBtn.textContent = theme === 'dark' ? '\u263c' : '\u263e';
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  setTheme(cur === 'dark' ? 'light' : 'dark');
+}
+const savedTheme = localStorage.getItem('deepseek_theme') || 'dark';
+setTheme(savedTheme);
+themeBtn.addEventListener('click', toggleTheme);
+
+// ==============================
+//  6. API KEY
+// ==============================
+function updateKeyStatus(hasKey) {
+  statusDot.className = 'status-dot ' + (hasKey ? 'online' : 'offline');
+  statusText.textContent = hasKey ? 'API Key 已配置' : '未配置 API Key';
+}
+if (apiKey) {
+  apiKeyInput.value = apiKey;
+  updateKeyStatus(true);
+}
+saveKeyBtn.addEventListener('click', () => {
+  const val = apiKeyInput.value.trim();
+  if (!val) return showToast('请输入 API Key');
+  apiKey = val;
+  localStorage.setItem('deepseek_api_key', val);
+  updateKeyStatus(true);
+  showToast('API Key 已保存');
+});
+
+// ==============================
+//  7. TOOL TOGGLES
+// ==============================
+toolToggles.forEach(el => {
+  el.addEventListener('click', () => {
+    el.classList.toggle('active');
+  });
+});
+
+// ==============================
+//  8. MARKDOWN RENDER
+// ==============================
+function mdToHtml(text) {
+  let html = text;
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const langClass = lang ? ` class="language-${escapeHtml(lang)}"` : '';
+    return `<pre><code${langClass}>${escapeHtml(code.trim())}</code></pre>`;
+  });
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" style="max-width:100%;border-radius:8px">');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+  html = html.replace(/^---$/gm, '<hr>');
+  html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+  html = html.replace(/^[\s]*[-*+] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  html = html.replace(/^[\s]*\d+\. (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(?:^|\n)(<li>.*<\/li>\n?)+/g, m => m.includes('<ol>') ? m : '<ol>' + m + '</ol>');
+  html = html.replace(/<\/ul>\n?<ul>/g, '');
+  html = html.replace(/<\/ol>\n?<ol>/g, '');
+  html = html.replace(/^\|(.+)\|$/gm, line => {
+    const cells = line.slice(1, -1).split('|').map(c => c.trim());
+    if (cells.every(c => /^[-:\s]+$/.test(c))) return '<tr class="sep">';
+    return '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+  });
+  html = html.replace(/(<tr>.*<\/tr>\n?)+/g, '<table>$&</table>');
+  html = html.replace(/<tr class="sep">/g, '');
+  const lines = html.split('\n');
+  let result = '';
+  for (let line of lines) {
+    const t = line.trim();
+    if (!t) { result += '\n'; continue; }
+    if (/^<(h[1-4]|ul|ol|li|table|tr|td|th|pre|code|blockquote|hr|img|div)/.test(t) || t.startsWith('<')) {
+      result += t + '\n';
+    } else {
+      result += `<p>${t}</p>\n`;
+    }
+  }
+  return result.trim();
+}
+
+function applyHighlighting(el) {
+  el.querySelectorAll('pre code').forEach(block => {
+    hljs.highlightElement(block);
+    const pre = block.parentElement;
+    if (!pre.querySelector('.copy-btn')) {
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = '\u2398 \u590d\u5236';
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(block.textContent).then(() => {
+          btn.textContent = '\u2713 \u5df2\u590d\u5236';
+          setTimeout(() => { btn.textContent = '\u2398 \u590d\u5236'; }, 2000);
+        });
+      });
+      pre.appendChild(btn);
+    }
+  });
+}
+
+// ==============================
+//  9. MESSAGE RENDERER
+// ==============================
+function renderMessage(msg) {
+  const div = document.createElement('div');
+  div.className = 'message ' + (msg.role || 'assistant');
+  if (msg.role === 'error') div.className = 'message assistant error';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+
+  const content = document.createElement('div');
+  content.className = 'content';
+
+  if (msg.role === 'typing') {
+    div.classList.add('typing');
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      content.appendChild(dot);
+    }
+  } else if (msg.role === 'tool-call') {
+    avatar.textContent = '\u2699';
+    content.innerHTML = `<span class="tool-name">${escapeHtml(msg.toolName)}</span>`;
+    if (msg.toolArgs) {
+      content.innerHTML += `<span class="tool-args">${escapeHtml(msg.toolArgs)}</span>`;
+    }
+  } else if (msg.role === 'tool-result') {
+    avatar.textContent = '\u2713';
+    content.textContent = msg.content;
+    if (content.scrollHeight > 200) {
+      content.classList.add('collapsed');
+      content.style.maxHeight = '150px';
+      content.style.overflow = 'hidden';
+      const btn = document.createElement('button');
+      btn.className = 'expand-btn';
+      btn.textContent = '\u5c55\u5f00\u5168\u90e8 \u25bc';
+      btn.addEventListener('click', () => {
+        if (content.classList.contains('collapsed')) {
+          content.classList.remove('collapsed');
+          content.style.maxHeight = 'none';
+          btn.textContent = '\u6298\u53e0 \u25b2';
+        } else {
+          content.classList.add('collapsed');
+          content.style.maxHeight = '150px';
+          btn.textContent = '\u5c55\u5f00\u5168\u90e8 \u25bc';
+        }
+      });
+      content.parentElement.appendChild(btn);
+    }
+  } else {
+    avatar.textContent = msg.role === 'user' ? 'U' : 'DS';
+    content.innerHTML = msg.html || escapeHtml(msg.content);
+    applyHighlighting(content);
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(content);
+
+  setTimeout(() => div.scrollIntoView({ behavior: 'smooth', block: 'end' }), 50);
+  return div;
+}
+
+function addTyping() {
+  const el = renderMessage({ role: 'typing' });
+  messagesEl.appendChild(el);
+  return el;
+}
+
+function removeTyping(el) {
+  if (el && el.parentElement) el.remove();
+}
+
+// ==============================
+//  10. TOOL EXECUTORS
+// ==============================
+async function executeTool(toolName, args) {
+  switch (toolName) {
+    case 'web_search':
+      return await tool_webSearch(args.query);
+    case 'fetch_url':
+      return await tool_fetchUrl(args.url);
+    case 'calculator':
+      return await tool_calculator(args.expression);
+    case 'run_code':
+      return await tool_runCode(args.language, args.code, args.stdin);
+    case 'run_javascript':
+      return await tool_runJavascript(args.code);
+    case 'current_datetime':
+      return await tool_currentDatetime(args.format);
+    case 'read_files':
+      return await tool_readFiles(args.multiple);
+    case 'write_file':
+      return await tool_writeFile(args.content, args.suggestedName);
+    case 'explore_directory':
+      return await tool_exploreDirectory(args.recursive);
+    case 'clipboard_operate':
+      return await tool_clipboard(args.action, args.text);
+    default:
+      return JSON.stringify({ error: `未知工具: ${toolName}` });
+  }
+}
+
+// --- web_search ---
+async function tool_webSearch(query) {
+  try {
+    // Use DuckDuckGo instant answer API (no key needed, CORS-friendly)
+    const resp = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`);
+    if (!resp.ok) return `搜索失败 (HTTP ${resp.status})`;
+    const data = await resp.json();
+    let result = '';
+    if (data.AbstractText) result += data.AbstractText + '\n';
+    if (data.AbstractSource) result += `来源: ${data.AbstractSource}\n`;
+    if (data.RelatedTopics && data.RelatedTopics.length) {
+      const items = data.RelatedTopics.slice(0, 8);
+      result += '\n相关结果:\n';
+      items.forEach((item, i) => {
+        if (item.Text) result += `${i + 1}. ${item.Text}\n`;
+        if (item.FirstURL) result += `   ${item.FirstURL}\n`;
+      });
+    }
+    if (!result) result = '未找到相关结果。';
+    return result;
+  } catch (e) {
+    return `搜索出错: ${e.message}`;
+  }
+}
+
+// --- fetch_url ---
+async function tool_fetchUrl(url) {
+  try {
+    // First try direct fetch (some sites allow CORS)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const resp = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DeepSeekAgent/1.0)' }
+      });
+      clearTimeout(timeout);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      return text.length > 8000 ? text.slice(0, 8000) + '\n\n... (已截断)' : text;
+    } catch (directErr) {
+      clearTimeout(timeout);
+      // Fallback: try via CORS proxy
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+      const resp2 = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+      if (!resp2.ok) throw new Error(`代理请求失败 (HTTP ${resp2.status})`);
+      const text2 = await resp2.text();
+      return text2.length > 8000 ? text2.slice(0, 8000) + '\n\n... (已截断)' : text2;
+    }
+  } catch (e) {
+    return `抓取失败: ${e.message}`;
+  }
+}
+
+// --- calculator ---
+async function tool_calculator(expression) {
+  try {
+    // Safe eval — only allow math expressions
+    const sanitized = expression.replace(/[^0-9+\-*/.%()\s\w.]/g, '');
+    const result = Function('"use strict"; return (' + sanitized + ')')();
+    return String(result);
+  } catch (e) {
+    try {
+      const result = Function('"use strict"; return (' + expression + ')')();
+      return String(result);
+    } catch (e2) {
+      return `计算错误: ${e2.message}`;
+    }
+  }
+}
+
+// --- run_javascript ---
+async function tool_runJavascript(code) {
+  try {
+    const result = Function('"use strict"; return (' + code + ')')();
+    const str = typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result);
+    return str || 'undefined';
+  } catch (e) {
+    try {
+      const result = Function('"use strict"; ' + code)();
+      const str = typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result);
+      return str || 'undefined';
+    } catch (e2) {
+      return `执行错误: ${e2.message}`;
+    }
+  }
+}
+
+// --- current_datetime ---
+async function tool_currentDatetime(format) {
+  const now = new Date();
+  const opts = {
+    full: now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    date: now.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric' }),
+    time: now.toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    iso: now.toISOString()
+  };
+  return opts[format] || opts.full;
+}
+
+// --- run_code (Piston API) ---
+async function tool_runCode(language, code, stdin) {
+  try {
+    const resp = await fetch('https://emkc.org/api/v2/piston/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: language.toLowerCase(),
+        version: '*',
+        files: [{ name: 'main', content: code }],
+        stdin: stdin || '',
+        compile_timeout: 10000,
+        run_timeout: 30000
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.text();
+      return `执行失败 (HTTP ${resp.status}): ${err}`;
+    }
+    const data = await resp.json();
+    let output = '';
+    if (data.compile?.code !== 0 && data.compile?.stderr) {
+      output += '编译错误:\n' + data.compile.stderr + '\n';
+    }
+    if (data.run?.stdout) output += data.run.stdout;
+    if (data.run?.stderr) output += '\n' + data.run.stderr;
+    if (data.run?.output) output += '\n' + data.run.output;
+    return output.trim() || '(无输出)';
+  } catch (e) {
+    return `请求失败: ${e.message}`;
+  }
+}
+
+// --- read_files (File System Access API) ---
+async function tool_readFiles(multiple) {
+  try {
+    if (!('showOpenFilePicker' in window)) {
+      return '当前浏览器不支持 File System Access API。请使用 Chrome 或 Edge。';
+    }
+    const pickerOpts = { multiple: !!multiple, types: [{ accept: { '*/*': [] } }] };
+    const handles = await window.showOpenFilePicker(pickerOpts);
+    if (!handles || handles.length === 0) return '未选择文件。';
+    let result = '';
+    for (let i = 0; i < handles.length; i++) {
+      const file = await handles[i].getFile();
+      const content = await file.text();
+      result += `\n===== ${file.name} (${(file.size / 1024).toFixed(1)}KB) =====\n`;
+      result += content.length > 5000 ? content.slice(0, 5000) + '\n... (已截断)' : content;
+    }
+    return result.trim() || '(文件为空)';
+  } catch (e) {
+    if (e.name === 'AbortError' || e.message?.includes('abort')) return '用户取消了文件选择。';
+    return `读取文件出错: ${e.message}`;
+  }
+}
+
+// --- write_file (File System Access API) ---
+async function tool_writeFile(content, suggestedName) {
+  try {
+    if (!('showSaveFilePicker' in window)) {
+      return '当前浏览器不支持 File System Access API。请使用 Chrome 或 Edge。';
+    }
+    const handle = await window.showSaveFilePicker({
+      suggestedName: suggestedName || 'output.txt',
+      types: [{ accept: { 'text/plain': ['.txt', '.md', '.json', '.js', '.py', '.html', '.css', '.csv'] } }]
+    });
+    const writable = await handle.createWritable();
+    await writable.write(content);
+    await writable.close();
+    return `文件已成功保存到: ${handle.name}`;
+  } catch (e) {
+    if (e.name === 'AbortError' || e.message?.includes('abort')) return '用户取消了保存。';
+    return `保存文件出错: ${e.message}`;
+  }
+}
+
+// --- explore_directory (File System Access API) ---
+async function tool_exploreDirectory(recursive) {
+  try {
+    if (!('showDirectoryPicker' in window)) {
+      return '当前浏览器不支持 File System Access API。请使用 Chrome 或 Edge。';
+    }
+    const rootHandle = await window.showDirectoryPicker();
+    let result = `目录: ${rootHandle.name}\n`;
+    result += await listDirContents(rootHandle, '', !!recursive);
+    return result.trim();
+  } catch (e) {
+    if (e.name === 'AbortError' || e.message?.includes('abort')) return '用户取消了目录选择。';
+    return `浏览目录出错: ${e.message}`;
+  }
+}
+
+async function listDirContents(dirHandle, prefix, recursive) {
+  let result = '';
+  const isTop = prefix === '';
+  for await (const entry of dirHandle.values()) {
+    if (entry.kind === 'file') {
+      result += `${prefix}${isTop ? '' : '  '}${entry.name}\n`;
+    } else if (entry.kind === 'directory' && recursive) {
+      result += `${prefix}${isTop ? '' : '  '}${entry.name}/\n`;
+      const subHandle = await dirHandle.getDirectoryHandle(entry.name);
+      result += await listDirContents(subHandle, prefix + '  ', recursive);
+    } else if (entry.kind === 'directory') {
+      result += `${prefix}${isTop ? '' : '  '}${entry.name}/\n`;
+    }
+  }
+  return result;
+}
+
+// --- clipboard ---
+async function tool_clipboard(action, text) {
+  try {
+    if (action === 'read') {
+      if (!navigator.clipboard?.readText) return '当前浏览器不支持读取剪贴板。';
+      const content = await navigator.clipboard.readText();
+      return content ? `剪贴板内容:\n${content}` : '剪贴板为空。';
+    } else if (action === 'write') {
+      if (!navigator.clipboard?.writeText) return '当前浏览器不支持写入剪贴板。';
+      await navigator.clipboard.writeText(text || '');
+      return '已成功写入剪贴板。';
+    }
+    return `未知操作: ${action}`;
+  } catch (e) {
+    return `剪贴板操作失败: ${e.message}`;
+  }
+}
+
+// ==============================
+//  11. AGENT LOOP
+// ==============================
+async function agentLoop(userMessage) {
+  if (isRunning) return;
+  isRunning = true;
+  agentLoopAborted = false;
+  sendBtn.disabled = true;
+  userInput.disabled = true;
+
+  // Add user message to history
+  messages.push({ role: 'user', content: userMessage });
+
+  // Render user message
+  const userHtml = mdToHtml(userMessage);
+  messagesEl.appendChild(renderMessage({ role: 'user', html: userHtml }));
+
+  const activeTools = getActiveTools();
+  const systemMsg = `你是一个有用的 AI Agent。你有以下工具可以使用: ${activeTools.map(t => t.function.name).join(', ')}。
+当用户提出需要实时信息、计算、文件操作或代码执行的任务时，使用对应的工具。
+分析用户需求后，调用一个或多个工具来完成任务。
+不要一次性调用过多工具，尽量在一次回复中完成。`;
+
+  let turn = 0;
+  const MAX_TURNS = 10;
+  let typingEl = null;
+
+  try {
+    while (turn < MAX_TURNS && !agentLoopAborted) {
+      turn++;
+      turnCounter.textContent = `推理轮次 ${turn}/${MAX_TURNS}`;
+
+      // Show typing
+      typingEl = addTyping();
+
+      // Build API messages
+      const apiMessages = [
+        { role: 'system', content: systemMsg },
+        ...messages.map(m => {
+          if (m.role === 'tool-call') return { role: 'assistant', content: null, tool_calls: m.toolCallsData };
+          if (m.role === 'tool-result') return { role: 'tool', tool_call_id: m.toolCallId, content: m.content };
+          return { role: m.role, content: m.content };
+        })
+      ];
+      // Filter out tool-call entries without toolCallsData just in case
+      const filteredMessages = apiMessages.filter(m => {
+        if (m.role === 'assistant' && m.tool_calls === undefined && m.content === null) return false;
+        return true;
+      });
+
+      const body = {
+        model: modelSelect.value,
+        messages: filteredMessages,
+        max_tokens: 4096,
+        stream: true
+      };
+      if (activeTools.length > 0) {
+        body.tools = activeTools;
+      }
+
+      // Make API request
+      const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!resp.ok) {
+        let errMsg = `请求失败 (${resp.status})`;
+        try {
+          const err = await resp.json();
+          errMsg = err.error?.message || errMsg;
+        } catch {}
+        throw new Error(errMsg);
+      }
+
+      // Parse SSE stream
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullContent = '';
+      let toolCallsAccum = {};
+      let finishReason = null;
+
+      // Remove typing
+      removeTyping(typingEl);
+      typingEl = null;
+
+      // Create placeholder for this turn's output
+      let turnContentEl = null;
+
+      const flushRender = () => {
+        if (!turnContentEl) return;
+        const contentEl = turnContentEl.querySelector('.content');
+        if (!contentEl) return;
+        if (fullContent) {
+          contentEl.innerHTML = mdToHtml(fullContent);
+          applyHighlighting(contentEl);
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t || !t.startsWith('data: ')) continue;
+          const data = t.slice(6);
+          if (data === '[DONE]') { finishReason = 'stop'; continue; }
+
+          try {
+            const parsed = JSON.parse(data);
+            const choice = parsed.choices?.[0];
+            if (!choice) continue;
+
+            const delta = choice.delta || {};
+            finishReason = choice.finish_reason;
+
+            // Text content
+            if (delta.content) {
+              fullContent += delta.content;
+            }
+
+            // Tool calls
+            if (delta.tool_calls) {
+              for (const tc of delta.tool_calls) {
+                const idx = tc.index;
+                if (!toolCallsAccum[idx]) {
+                  toolCallsAccum[idx] = { id: '', type: 'function', function: { name: '', arguments: '' } };
+                }
+                if (tc.id) toolCallsAccum[idx].id += tc.id;
+                if (tc.function?.name) toolCallsAccum[idx].function.name += tc.function.name;
+                if (tc.function?.arguments) toolCallsAccum[idx].function.arguments += tc.function.arguments;
+              }
+            }
+
+            // Render text content as it streams
+            if (!turnContentEl && (fullContent || Object.keys(toolCallsAccum).length > 0)) {
+              // Decide what kind of message to render
+              if (fullContent) {
+                turnContentEl = renderMessage({ role: 'assistant', html: '' });
+                messagesEl.appendChild(turnContentEl);
+              }
+            }
+
+            if (turnContentEl && fullContent) {
+              const contentEl = turnContentEl.querySelector('.content');
+              if (contentEl) {
+                contentEl.innerHTML = mdToHtml(fullContent);
+                applyHighlighting(contentEl);
+              }
+            }
+
+            // If we have tool calls in delta but no content, render tool call message
+            if (!turnContentEl && Object.keys(toolCallsAccum).length > 0 && !fullContent) {
+              // Will be rendered after we know the tool name
+            }
+
+          } catch {}
+        }
+      }
+
+      // Flush any remaining
+      flushRender();
+
+      // Determine outcome
+      const toolCalls = Object.values(toolCallsAccum);
+
+      if (toolCalls.length > 0) {
+        // Render tool call messages
+        for (const tc of toolCalls) {
+          const argsStr = tc.function.arguments;
+          const tcMsg = {
+            role: 'tool-call',
+            toolName: tc.function.name,
+            toolArgs: argsStr
+          };
+          messagesEl.appendChild(renderMessage(tcMsg));
+
+          // Execute tool
+          let args;
+          try {
+            args = JSON.parse(argsStr);
+          } catch {
+            args = {};
+          }
+
+          const result = await executeTool(tc.function.name, args);
+
+          // Render tool result
+          const resultMsg = {
+            role: 'tool-result',
+            content: typeof result === 'string' ? result.slice(0, 4000) : JSON.stringify(result).slice(0, 4000),
+            toolCallId: tc.id,
+            toolCallsData: null
+          };
+          messagesEl.appendChild(renderMessage(resultMsg));
+
+          // Add to message history
+          messages.push({
+            role: 'tool-call',
+            content: null,
+            toolCallsData: [{
+              id: tc.id,
+              type: 'function',
+              function: { name: tc.function.name, arguments: argsStr }
+            }]
+          });
+          messages.push({
+            role: 'tool-result',
+            toolCallId: tc.id,
+            content: typeof result === 'string' ? result : JSON.stringify(result)
+          });
+        }
+      } else if (fullContent) {
+        // Pure text response — final answer
+        messages.push({ role: 'assistant', content: fullContent });
+        turnCounter.textContent = `已完成 (${turn} 轮)`;
+        return;
+      } else {
+        // Empty response
+        messages.push({ role: 'assistant', content: '(无响应)' });
+        turnCounter.textContent = `已完成 (${turn} 轮)`;
+        return;
+      }
+    }
+
+    if (turn >= MAX_TURNS) {
+      turnCounter.textContent = `已达最大轮次 (${MAX_TURNS})`;
+      showToast(`已达到最大推理轮次 (${MAX_TURNS})`);
+    }
+
+  } catch (err) {
+    removeTyping(typingEl);
+    const errMsg = err.message || '未知错误';
+    const errEl = renderMessage({ role: 'error', html: `<strong>出错了</strong><br>${escapeHtml(errMsg)}` });
+    messagesEl.appendChild(errEl);
+    turnCounter.textContent = '出错';
+  }
+
+  isRunning = false;
+  sendBtn.disabled = false;
+  userInput.disabled = false;
+  userInput.focus();
+}
+
+// ==============================
+//  12. SEND
+// ==============================
+function sendMessage() {
+  if (isRunning) return;
+  const text = userInput.value.trim();
+  if (!text) return;
+  lastUserMsg = text;
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  agentLoop(text);
+}
+
+// ==============================
+//  13. EVENT BINDINGS
+// ==============================
+userInput.addEventListener('input', () => {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 180) + 'px';
+});
+userInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+clearBtn.addEventListener('click', () => {
+  if (!messagesEl.children.length) return;
+  if (!confirm('确定清空对话？')) return;
+  messagesEl.innerHTML = '';
+  messages = [];
+  turnCounter.textContent = '';
+  userInput.focus();
+});
+
+// ==============================
+//  14. INIT
+// ==============================
+// Trigger agent example on load hint
+const placeholder = '输入任务，例如: 用Python写一个排序算法并运行它';
+userInput.placeholder = placeholder;
+userInput.focus();
+
+})();
+</script>
+</body>
+</html>
